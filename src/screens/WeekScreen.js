@@ -311,6 +311,13 @@ export default function WeekScreen({
 
   function setVal(id, val) { setFieldVals(p => ({ ...p, [id]: val })); }
 
+  function fmtReps(r) {
+    if (r == null) return '—';
+    const s = String(r).trim().toLowerCase();
+    const m = s.match(/^(\d+)\s*each$/) || s.match(/^(\d+)e$/);
+    return m ? m[1] + 'e' : r;
+  }
+
   function pickEx(i, pIdx = null) {
     setCurExIdx(i);
     setSelectedPIdx(pIdx);
@@ -530,7 +537,10 @@ export default function WeekScreen({
                           </select>
                         </div>
                       ) : (
-                        <input className="input-field" placeholder={f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
+                        <input className="input-field"
+                          placeholder={f.id === 'reps' && eachSide && presEx ? (String(presEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph}
+                          value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)}
+                          type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
                       )}
                     </div>
                   );
@@ -776,12 +786,12 @@ export default function WeekScreen({
                               )}
                               <span className="badge">
                                 {done === 0 ? (
-                                  <>{target}×{ex.reps || '—'}</>
+                                  <>{target}×{fmtReps(ex.reps)}</>
                                 ) : (
                                   <>
                                     <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}</span>
                                     <span style={{ color: left === 0 ? '#4adbaa' : '#ffb060', marginLeft:3 }}>{left}</span>
-                                    ×{ex.reps || '—'}
+                                    ×{fmtReps(ex.reps)}
                                   </>
                                 )}
                               </span>
