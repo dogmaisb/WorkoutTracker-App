@@ -1,13 +1,14 @@
 {
   "files": {
     "main.css": "/WorkoutTracker-App/static/css/main.3f6c947f.css",
-    "main.js": "/WorkoutTracker-App/static/js/main.fbaa8764.js",
+    "main.js": "/WorkoutTracker-App/static/js/main.d211e6c5.js",
+    "service-worker.js": "/WorkoutTracker-App/service-worker.js",
     "index.html": "/WorkoutTracker-App/index.html",
     "main.3f6c947f.css.map": "/WorkoutTracker-App/static/css/main.3f6c947f.css.map",
-    "main.fbaa8764.js.map": "/WorkoutTracker-App/static/js/main.fbaa8764.js.map"
+    "main.d211e6c5.js.map": "/WorkoutTracker-App/static/js/main.d211e6c5.js.map"
   },
   "entrypoints": [
     "static/css/main.3f6c947f.css",
-    "static/js/main.fbaa8764.js"
+    "static/js/main.d211e6c5.js"
   ]
 }
