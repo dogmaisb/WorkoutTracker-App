@@ -3,7 +3,7 @@ import './styles.css';
 
 import WeekScreen      from './screens/WeekScreen';
 import ProgressScreen  from './screens/ProgressScreen';
-import { HistoryScreen, DetailScreen } from './screens/HistoryScreen';
+import { HistoryScreen, DetailScreen, AllExercisesScreen } from './screens/HistoryScreen';
 import TimersScreen    from './screens/TimersScreen';
 import { SettingsScreen, NotesScreen } from './screens/OtherScreens';
 import DietScreen from './screens/DietScreen';
@@ -20,6 +20,7 @@ const NAV = [
 export default function App() {
   const [tab,       setTab]       = useState('week');
   const [detailEx,  setDetailEx]  = useState(null);
+  const [allExPage, setAllExPage] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
   // Lifted up so they survive the Notes screen mount/unmount
@@ -40,6 +41,7 @@ export default function App() {
   function switchTab(key) {
     setTab(key);
     setDetailEx(null);
+    setAllExPage(false);
     setShowNotes(false);
   }
 
@@ -75,7 +77,8 @@ export default function App() {
     if (tab === 'progress') return <ProgressScreen stateVersion={stateVersion} />;
     if (tab === 'history') {
       if (detailEx) return <DetailScreen exerciseName={detailEx} onBack={() => setDetailEx(null)} stateVersion={stateVersion} />;
-      return <HistoryScreen onOpenDetail={ex => setDetailEx(ex)} stateVersion={stateVersion} />;
+      if (allExPage) return <AllExercisesScreen onBack={() => setAllExPage(false)} onOpenDetail={ex => setDetailEx(ex)} stateVersion={stateVersion} />;
+      return <HistoryScreen onOpenDetail={ex => setDetailEx(ex)} onOpenAllEx={() => setAllExPage(true)} stateVersion={stateVersion} />;
     }
     if (tab === 'timers')   return <TimersScreen />;
     if (tab === 'diet')     return <DietScreen stateVersion={stateVersion} />;

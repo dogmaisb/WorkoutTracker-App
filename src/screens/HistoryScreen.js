@@ -1,9 +1,9 @@
 import { useBackground } from '../useBackground';
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  loadSets, saveSets, deleteSet, getPR, setMainValue,
+  loadSets, saveSets, deleteSet, getPR, getVolumePR, setMainValue,
   PR_METRIC, METRIC_LABELS, FIELD_DEFS,
-  getStrengthPRs, getGenericPRs, getPRsForSet,
+  getStrengthPRs, getGenericPRs, getPRsForSet, calcSetVolume,
 } from '../storage';
 
 const BASE_EX = [
@@ -24,7 +24,7 @@ const SPRINT_UNITS = ['yd', 'm', 'mi', 'km', 'ft'];
 const WEIGHT_UNITS = ['lb', 'kg'];
 
 // ── History Index ─────────────────────────────────────────────────────────────
-export function HistoryScreen({ onOpenDetail }) {
+export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
   const bgStyle = useBackground("history");
   const [sets,   setSets]   = useState([]);
   const [search, setSearch] = useState('');
@@ -66,11 +66,24 @@ export function HistoryScreen({ onOpenDetail }) {
     velRef.current.raf = requestAnimationFrame(momentum);
   }
 
-  const allEx    = [...new Set([...BASE_EX, ...sets.map(s => s.ex)])];
+  const allEx = [...new Set([...BASE_EX, ...sets.map(s => s.ex)])];
+
+  // Only exercises with at least one logged set, alphabetical
+  const recordedEx = allEx
+    .filter(ex => sets.some(s => s.ex === ex))
+    .sort((a, b) => a.localeCompare(b));
+
   const filtered = search.trim()
-    ? allEx.filter(e => e.toLowerCase().includes(search.toLowerCase()))
-    : allEx;
-  const prs = allEx.map(ex => ({ ex, pr: getPR(sets, ex) })).filter(p => p.pr);
+    ? recordedEx.filter(e => e.toLowerCase().includes(search.toLowerCase()))
+    : recordedEx;
+  const prs = allEx.flatMap(ex => {
+    const cards = [];
+    const pr = getPR(sets, ex);
+    if (pr) cards.push({ ex, pr });
+    const vpr = getVolumePR(sets, ex);
+    if (vpr) cards.push({ ex, pr: vpr });
+    return cards;
+  });
   const sortedPrs = search.trim()
     ? [...prs].sort((a, b) => {
         const aMatch = a.ex.toLowerCase().includes(search.toLowerCase());
@@ -118,8 +131,68 @@ export function HistoryScreen({ onOpenDetail }) {
 
       {/* Scrollable exercises list */}
       <div style={{ flex:1, overflowY:'auto', padding:'0 16px 12px', borderTop:'1px solid #2d4a2d' }}>
-        <div className="section-label" style={{ marginTop:8 }}>All Exercises</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:8, marginBottom:6 }}>
+          <div className="section-label" style={{ margin:0 }}>Exercises</div>
+          <button onClick={onOpenAllEx} style={{
+            background:'rgba(200,168,74,0.12)', border:'1px solid rgba(200,168,74,0.4)',
+            borderRadius:20, padding:'3px 10px', cursor:'pointer',
+            fontSize:9, color:'#c8a84a', fontWeight:700, letterSpacing:'0.05em',
+          }}>ALL EXERCISES</button>
+        </div>
         {!filtered.length && <div className="empty">No exercises found</div>}
+        {filtered.map(ex => {
+          const exSets  = sets.filter(s => s.ex === ex);
+          const last    = exSets.length ? exSets[exSets.length - 1] : null;
+          const lastVal = last ? setMainValue(last) : '—';
+          const lastTime = last ? `${last.date} · ${last.time}` : 'No entries yet';
+          return (
+            <div key={ex} className="ei-row" onClick={() => onOpenDetail(ex)}>
+              <div>
+                <div className="ei-name">{ex}</div>
+                <div className="ei-sub">{exSets.length} set{exSets.length !== 1 ? 's' : ''} logged</div>
+              </div>
+              <div>
+                <div className="ei-val">{lastVal}</div>
+                <div className="ei-time">{lastTime}</div>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height:12 }} />
+      </div>
+    </div>
+  );
+}
+
+// ── All Exercises Screen ──────────────────────────────────────────────────────
+export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
+  const bgStyle = useBackground("history");
+  const [sets,   setSets]   = useState([]);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => { setSets(loadSets()); }, [stateVersion]);
+
+  const allEx = [...new Set([...BASE_EX, ...sets.map(s => s.ex)])]
+    .sort((a, b) => a.localeCompare(b));
+
+  const filtered = search.trim()
+    ? allEx.filter(e => e.toLowerCase().includes(search.toLowerCase()))
+    : allEx;
+
+  return (
+    <div className="screen history-page" style={bgStyle}>
+      <div className="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div className="top-bar" style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', color:'#6a9a6a', fontSize:20, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
+        <h1 style={{ margin:0 }}>All Exercises</h1>
+      </div>
+      <div style={{ flex:1, overflowY:'auto', padding:'0 16px 12px' }}>
+        <div className="search-bar" style={{ margin:'10px 0 12px' }}>
+          <span style={{ color:'#6a9a6a' }}>🔍</span>
+          <input placeholder="Search exercises..." value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <span style={{ cursor:'pointer', color:'#6a9a6a' }} onClick={() => setSearch('')}>✕</span>}
+        </div>
+        <div style={{ fontSize:11, color:'#3a5a3a', marginBottom:10 }}>{filtered.length} exercise{filtered.length !== 1 ? 's' : ''}</div>
         {filtered.map(ex => {
           const exSets  = sets.filter(s => s.ex === ex);
           const last    = exSets.length ? exSets[exSets.length - 1] : null;
@@ -359,6 +432,20 @@ export function DetailScreen({ exerciseName, onBack }) {
   const best  = vals.length ? (isTime ? Math.min(...vals) : Math.max(...vals)) : null;
   const avg   = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : null;
 
+  // Volume stats (strength + bodyweight only)
+  const hasVolume = type === 'strength' || type === 'bodyweight';
+  const sessionVolumes = (() => {
+    if (!hasVolume) return [];
+    const byDate = {};
+    exSets.forEach(s => {
+      const vol = calcSetVolume(s);
+      if (vol > 0) byDate[s.date] = (byDate[s.date] || 0) + vol;
+    });
+    return Object.values(byDate);
+  })();
+  const peakVolume  = sessionVolumes.length ? Math.max(...sessionVolumes) : null;
+  const totalVolume = exSets.reduce((sum, s) => sum + calcSetVolume(s), 0);
+
   // PR display for stat box
   const prDisplay = type === 'strength'
     ? (prData.bestWeight !== null ? `${prData.bestWeight} lb` : '—')
@@ -398,10 +485,11 @@ export function DetailScreen({ exerciseName, onBack }) {
 
     // For strength show weight + reps together
     const displayVal = set.type === 'strength'
-      ? `${set.vals.weight || '?'} lb × ${set.vals.reps || '?'} reps`
+      ? `${set.vals.weight ? set.vals.weight + ' lb' : 'No Weight'} × ${set.vals.reps || '?'} reps`
       : main;
 
     const hasPR = prLabels.length > 0;
+    const setVol = calcSetVolume(set);
 
     return (
       <div
@@ -415,6 +503,7 @@ export function DetailScreen({ exerciseName, onBack }) {
             <div style={{ fontSize:11, color:'#6a9a6a' }}>✎</div>
           </div>
           {sub && <div style={{ fontSize:11, color:'#6a9a6a', marginTop:2 }}>{sub}</div>}
+          {setVol > 0 && <div style={{ fontSize:10, color:'rgba(74,219,170,0.7)', marginTop:2 }}>{setVol.toLocaleString()} lb vol</div>}
           {set.note && <div className="dr-note">{set.note}</div>}
           {prLabels.length > 0 && (
             <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
@@ -442,32 +531,53 @@ export function DetailScreen({ exerciseName, onBack }) {
         <div style={{ fontSize:12, color:'#7a6a3a', marginBottom:12 }}>{exSets.length} total sets logged · tap any set to edit</div>
 
         {/* Stats */}
-        <div className="stat-row" style={{ gridTemplateColumns: bestRepsDisplay ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr' }}>
-          <div className="stat-box">
-            <div className="val">{prDisplay}</div>
-            <div className="lbl">{prLabel}</div>
-          </div>
-          {bestRepsDisplay && (
-            <div className="stat-box">
-              <div className="val">{bestRepsDisplay}</div>
-              <div className="lbl">Reps PR</div>
+        {(() => {
+          const cols = [1, bestRepsDisplay ? 1 : 0, 1, 1, hasVolume ? 1 : 0].filter(Boolean).length;
+          return (
+            <div className="stat-row" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+              <div className="stat-box">
+                <div className="val">{prDisplay}</div>
+                <div className="lbl">{prLabel}</div>
+              </div>
+              {bestRepsDisplay && (
+                <div className="stat-box">
+                  <div className="val">{bestRepsDisplay}</div>
+                  <div className="lbl">Reps PR</div>
+                </div>
+              )}
+              <div className="stat-box">
+                <div className="val">{avg || '—'}{isTime && avg ? 's' : ''}</div>
+                <div className="lbl">Avg {METRIC_LABELS[pm]||pm}</div>
+              </div>
+              <div className="stat-box">
+                <div className="val">{exSets.length}</div>
+                <div className="lbl">Total Sets</div>
+              </div>
+              {hasVolume && (
+                <div className="stat-box">
+                  <div className="val" style={{ fontSize: peakVolume && peakVolume >= 10000 ? 11 : undefined }}>
+                    {peakVolume ? peakVolume.toLocaleString() : '—'}
+                  </div>
+                  <div className="lbl">Peak Session</div>
+                </div>
+              )}
             </div>
-          )}
-          <div className="stat-box">
-            <div className="val">{avg || '—'}{isTime && avg ? 's' : ''}</div>
-            <div className="lbl">Avg {METRIC_LABELS[pm]||pm}</div>
+          );
+        })()}
+
+        {/* Volume summary banner */}
+        {hasVolume && totalVolume > 0 && (
+          <div style={{ fontSize:11, color:'rgba(0,255,136,0.75)', background:'rgba(0,255,136,0.05)', border:'1px solid rgba(0,255,136,0.18)', borderRadius:8, padding:'8px 12px', marginBottom:10, lineHeight:1.5, display:'flex', justifyContent:'space-between' }}>
+            <span>Total Lifetime Volume</span>
+            <strong style={{ color:'#00ff88' }}>{totalVolume.toLocaleString()} lb</strong>
           </div>
-          <div className="stat-box">
-            <div className="val">{exSets.length}</div>
-            <div className="lbl">Total Sets</div>
-          </div>
-        </div>
+        )}
 
         {/* PR rules note for strength */}
         {type === 'strength' && (
           <div style={{ fontSize:11, color:'#a08040', background:'#1e1508', border:'1px solid #5a4a20', borderRadius:8, padding:'8px 12px', marginBottom:10, lineHeight:1.5 }}>
             🏆 <strong style={{ color:'#e8c84a' }}>Weight PR</strong> = highest weight ever lifted &nbsp;·&nbsp;
-            <strong style={{ color:'#e8c84a' }}>Reps PR</strong> = most reps ever performed
+            <strong style={{ color:'#e8c84a' }}>Reps PR</strong> = most reps ever performed at that weight
           </div>
         )}
 

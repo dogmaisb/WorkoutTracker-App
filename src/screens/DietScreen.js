@@ -1,5 +1,6 @@
 import { useBackground } from '../useBackground';
 import React, { useState, useEffect } from 'react';
+import { loadSettings } from '../storage';
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 const DIET_KEY = 'wt_diet_v1';
@@ -8,6 +9,22 @@ function loadDiet() {
 }
 function saveDiet(data) {
   try { localStorage.setItem(DIET_KEY, JSON.stringify(data)); } catch {}
+}
+
+const FOOD_LIB_KEY = 'wt_food_lib';
+function loadFoodLibrary() {
+  try { return JSON.parse(localStorage.getItem(FOOD_LIB_KEY)) || []; } catch { return []; }
+}
+function saveFoodLibrary(items) {
+  try { localStorage.setItem(FOOD_LIB_KEY, JSON.stringify(items)); } catch {}
+}
+
+const MEAL_LIB_KEY = 'wt_meal_lib';
+function loadMealLibrary() {
+  try { return JSON.parse(localStorage.getItem(MEAL_LIB_KEY)) || []; } catch { return []; }
+}
+function saveMealLibrary(items) {
+  try { localStorage.setItem(MEAL_LIB_KEY, JSON.stringify(items)); } catch {}
 }
 
 // ── TDEE helpers ──────────────────────────────────────────────────────────────
@@ -270,6 +287,14 @@ function MealPage({ meal, items, onBack, onSubmit }) {
   const [rows, setRows] = useState(
     items.length > 0 ? items.map(i => ({ ...i })) : [blankRow()]
   );
+  const [foodLib,      setFoodLib]      = useState(() => loadFoodLibrary());
+  const [activeSugRow, setActiveSugRow] = useState(null);
+  const [savedRow,     setSavedRow]     = useState(null);
+  const [overridePrompt, setOverridePrompt] = useState(null); // row to confirm override
+  const [storeMealPrompt, setStoreMealPrompt] = useState(false);
+  const [storeMealName,   setStoreMealName]   = useState('');
+  const [loadMealPrompt,  setLoadMealPrompt]  = useState(false);
+  const [mealLib,         setMealLib]         = useState(() => loadMealLibrary());
 
   function updateRow(id, field, val) {
     setRows(r => r.map(row => {
@@ -289,6 +314,40 @@ function MealPage({ meal, items, onBack, onSubmit }) {
   function removeRow(id) {
     setRows(r => r.length > 1 ? r.filter(row => row.id !== id) : [blankRow()]);
   }
+  function saveRowToLibrary(row) {
+    if (!row.name.trim() || !(parseInt(row.cal) > 0)) return;
+    const existing = loadFoodLibrary();
+    const alreadyExists = existing.some(f => f.name.toLowerCase() === row.name.trim().toLowerCase());
+    if (alreadyExists) { setOverridePrompt(row); return; }
+    commitSaveRow(row);
+  }
+
+  function commitSaveRow(row) {
+    const existing = loadFoodLibrary();
+    const libMap = new Map(existing.map(f => [f.name.toLowerCase(), f]));
+    libMap.set(row.name.trim().toLowerCase(), {
+      name: row.name.trim(), cal: parseInt(row.cal) || 0,
+      carbs: parseFloat(row.carbs) || 0, fats: parseFloat(row.fats) || 0,
+      protein: parseFloat(row.protein) || 0, chol: parseFloat(row.chol) || 0,
+      sodium: parseFloat(row.sodium) || 0,
+    });
+    const updated = Array.from(libMap.values());
+    saveFoodLibrary(updated);
+    setFoodLib(updated);
+    setOverridePrompt(null);
+    setSavedRow(row.id);
+    setTimeout(() => setSavedRow(null), 1500);
+  }
+
+  function updateRowFromFood(id, food) {
+    setRows(r => r.map(row => row.id !== id ? row : {
+      ...row, name: food.name, cal: String(food.cal),
+      carbs: String(food.carbs), fats: String(food.fats),
+      protein: String(food.protein), chol: String(food.chol), sodium: String(food.sodium),
+    }));
+    setActiveSugRow(null);
+  }
+
   const [saveWarn, setSaveWarn] = useState(false);
 
   function submit() {
@@ -334,15 +393,10 @@ function MealPage({ meal, items, onBack, onSubmit }) {
   };
 
   const macroInp = (row, id, label) => {
-    const macroCals = (parseFloat(row.carbs)||0)*4 + (parseFloat(row.fats)||0)*9 + (parseFloat(row.protein)||0)*4;
-    const cal = parseInt(row.cal) || macroCals || 0;
-    const pctVal = cal > 0 && ['carbs','fats','protein'].includes(id)
-      ? Math.round(((id==='carbs'?(parseFloat(row.carbs)||0)*4:id==='fats'?(parseFloat(row.fats)||0)*9:(parseFloat(row.protein)||0)*4)/cal)*100)
-      : null;
     return (
     <div style={{ flex:1, minWidth:0 }}>
       <div style={{ fontSize:8, color:'#4a7a9a', marginBottom:2, textTransform:'uppercase' }}>
-        {label}{pctVal !== null ? <span style={{ color: id==='carbs'?'#f4a261':id==='fats'?'#ff6b4a':'#7dd8ff' }}> ({pctVal}%)</span> : ''}
+        {label}
       </div>
       <input type="number" placeholder="0" value={row[id]}
         onChange={e => updateRow(row.id, id, e.target.value)}
@@ -384,11 +438,35 @@ function MealPage({ meal, items, onBack, onSubmit }) {
               <div style={{ width:20, height:20, borderRadius:'50%', background: meal.color,
                 display:'flex', alignItems:'center', justifyContent:'center',
                 fontSize:10, fontWeight:700, color:'#000', flexShrink:0 }}>{i+1}</div>
-              <input placeholder="Food item..." value={row.name}
-                onChange={e => updateRow(row.id, 'name', e.target.value)}
-                style={{ flex:2, padding:'7px 9px', borderRadius:8, fontSize:13,
-                  background:'rgba(0,0,0,0.35)', border:`1px solid ${meal.border}`,
-                  color:'#f0f8ff', outline:'none' }} />
+              <div style={{ flex:2, position:'relative' }}>
+                <input placeholder="Food item..." value={row.name}
+                  onChange={e => { updateRow(row.id, 'name', e.target.value); setActiveSugRow(row.id); }}
+                  onFocus={() => setActiveSugRow(row.id)}
+                  onBlur={() => setTimeout(() => setActiveSugRow(null), 150)}
+                  style={{ width:'100%', boxSizing:'border-box', padding:'7px 9px', borderRadius:8, fontSize:13,
+                    background:'rgba(0,0,0,0.35)', border:`1px solid ${meal.border}`,
+                    color:'#f0f8ff', outline:'none' }} />
+                {activeSugRow === row.id && row.name.trim().length > 0 && (() => {
+                  const q = row.name.toLowerCase();
+                  const matches = foodLib.filter(f => f.name.toLowerCase().includes(q)).slice(0, 7);
+                  if (!matches.length) return null;
+                  return (
+                    <div style={{ position:'absolute', top:'100%', left:0, right:0, zIndex:200,
+                      background:'#0d1e30', border:`1px solid ${meal.border}`, borderRadius:8,
+                      overflow:'hidden', marginTop:2, boxShadow:'0 6px 20px rgba(0,0,0,0.6)' }}>
+                      {matches.map(f => (
+                        <div key={f.name} onMouseDown={() => updateRowFromFood(row.id, f)}
+                          style={{ padding:'9px 12px', fontSize:12, color:'#f0f8ff', cursor:'pointer',
+                            borderBottom:'1px solid #162d48', display:'flex', justifyContent:'space-between',
+                            alignItems:'center' }}>
+                          <span>{f.name}</span>
+                          <span style={{ color: meal.color, fontSize:11, fontWeight:700 }}>{f.cal} kcal</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
               <input placeholder="kcal" type="number" value={row.cal}
                 readOnly={!!(parseFloat(row.carbs)||parseFloat(row.fats)||parseFloat(row.protein))}
                 onChange={e => updateRow(row.id, 'cal', e.target.value)}
@@ -397,6 +475,14 @@ function MealPage({ meal, items, onBack, onSubmit }) {
                   border:`1px solid ${meal.border}`,
                   color: (parseFloat(row.carbs)||parseFloat(row.fats)||parseFloat(row.protein)) ? '#7dff4f' : '#f0f8ff',
                   outline:'none', minWidth:0 }} />
+              <button onClick={() => saveRowToLibrary(row)}
+                title="Save to food library"
+                style={{ background:'none', border:'none', color: savedRow === row.id ? '#5adb9a' : '#4a7a9a',
+                  cursor:'pointer', padding:'0 2px', flexShrink:0, display:'flex', alignItems:'center', transition:'color .2s' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill={savedRow === row.id ? '#5adb9a' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+              </button>
               <button onClick={() => removeRow(row.id)}
                 style={{ background:'none', border:'none', color:'#4a7a9a',
                   cursor:'pointer', padding:'0 2px', flexShrink:0, display:'flex', alignItems:'center' }}>
@@ -432,7 +518,15 @@ function MealPage({ meal, items, onBack, onSubmit }) {
               <div style={{ fontSize:11, color:'#4a7a9a', marginBottom:2 }}>Running Total</div>
               <div style={{ fontSize:26, fontWeight:700, color: meal.color }}>{runningCal.toLocaleString()} <span style={{ fontSize:12, color:'#4a7a9a' }}>kcal</span></div>
             </div>
-            <div style={{ fontSize:36 }}>{meal.icon}</div>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+              <div style={{ fontSize:36 }}>{meal.icon}</div>
+              <button onClick={() => { setStoreMealName(''); setStoreMealPrompt(true); }} style={{
+                background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)',
+                borderRadius:20, padding:'3px 10px', cursor:'pointer',
+                fontSize:9, color:'#8bbdd8', letterSpacing:'0.04em', fontWeight:600,
+                whiteSpace:'nowrap',
+              }}>Store Meal</button>
+            </div>
           </div>
           <div style={{ display:'flex', gap:6 }}>
             {[
@@ -474,6 +568,11 @@ function MealPage({ meal, items, onBack, onSubmit }) {
           fontSize:15, fontWeight:700, marginBottom:8,
           boxShadow:`0 4px 20px ${meal.border}`,
         }}>Save {meal.label}</button>
+        <button onClick={() => { setMealLib(loadMealLibrary()); setLoadMealPrompt(true); }} style={{
+          width:'100%', padding:'12px', borderRadius:12, cursor:'pointer',
+          background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)',
+          color:'#8bbdd8', fontSize:13, marginBottom:8,
+        }}>Load Meal</button>
         <button onClick={onBack} style={{
           width:'100%', padding:'12px', borderRadius:12, cursor:'pointer',
           background:'transparent', border:'1px solid #1e5080', color:'#8bbdd8', fontSize:13,
@@ -481,12 +580,129 @@ function MealPage({ meal, items, onBack, onSubmit }) {
 
         <div style={{ height:16 }} />
       </div>
+
+      {/* Load Meal modal */}
+      {loadMealPrompt && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
+          <div style={{ background:'#0d1e30', border:`1px solid ${meal.border}`, borderRadius:16,
+            padding:'20px', margin:'0 24px', maxWidth:340, width:'100%' }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'#f0f8ff', marginBottom:4, textAlign:'center' }}>Load Meal</div>
+            <div style={{ fontSize:11, color:'#4a7a9a', marginBottom:14, textAlign:'center' }}>
+              Select a stored combo to populate this meal.
+            </div>
+            {mealLib.length === 0 ? (
+              <div style={{ textAlign:'center', color:'#4a7a9a', fontSize:12, padding:'20px 0' }}>
+                No stored meals yet. Use "Store Meal" to save a combo.
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:260, overflowY:'auto' }}>
+                {mealLib.map((m, i) => (
+                  <button key={i} onClick={() => {
+                    setRows(m.rows.map(r => ({ ...r, id: Date.now() + Math.random() })));
+                    setLoadMealPrompt(false);
+                  }} style={{
+                    background:'rgba(255,255,255,0.05)', border:`1px solid ${meal.border}`,
+                    borderRadius:10, padding:'10px 14px', cursor:'pointer', textAlign:'left',
+                  }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#f0f8ff', marginBottom:3 }}>{m.name}</div>
+                    <div style={{ fontSize:10, color:'#4a7a9a' }}>
+                      {m.rows.length} item{m.rows.length !== 1 ? 's' : ''} · {m.rows.reduce((s, r) => s + (parseInt(r.cal) || 0), 0)} kcal
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setLoadMealPrompt(false)} style={{
+              width:'100%', marginTop:14, padding:'11px', borderRadius:10, cursor:'pointer',
+              background:'transparent', border:`1px solid ${meal.border}`, color:'#8bbdd8', fontSize:13,
+            }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Store Meal modal */}
+      {storeMealPrompt && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
+          <div style={{ background:'#0d1e30', border:`1px solid ${meal.border}`, borderRadius:16,
+            padding:'24px 20px', margin:'0 24px', maxWidth:320, width:'100%', textAlign:'center' }}>
+            <div style={{ fontSize:26, marginBottom:8 }}>{meal.icon}</div>
+            <div style={{ fontSize:15, fontWeight:700, color:'#f0f8ff', marginBottom:6 }}>Store Meal</div>
+            <div style={{ fontSize:12, color:'#4a7a9a', marginBottom:14 }}>
+              Save this meal as a template to reuse later.
+            </div>
+            <input
+              autoFocus
+              type="text"
+              placeholder="Meal name…"
+              value={storeMealName}
+              onChange={e => setStoreMealName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && storeMealName.trim()) {
+                  const lib = loadMealLibrary();
+                  const updated = [...lib.filter(m => m.name.toLowerCase() !== storeMealName.trim().toLowerCase()),
+                    { name: storeMealName.trim(), rows: rows.filter(r => r.name.trim()), savedAt: Date.now() }];
+                  saveMealLibrary(updated); setMealLib(updated); setStoreMealPrompt(false);
+                }
+              }}
+              style={{ width:'100%', boxSizing:'border-box', padding:'10px 12px', borderRadius:9, fontSize:13,
+                background:'rgba(0,0,0,0.4)', border:`1px solid ${meal.border}`,
+                color:'#f0f8ff', outline:'none', marginBottom:14 }}
+            />
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => {
+                if (!storeMealName.trim()) return;
+                const lib = loadMealLibrary();
+                const updated = [...lib.filter(m => m.name.toLowerCase() !== storeMealName.trim().toLowerCase()),
+                  { name: storeMealName.trim(), rows: rows.filter(r => r.name.trim()), savedAt: Date.now() }];
+                saveMealLibrary(updated); setMealLib(updated); setStoreMealPrompt(false);
+              }} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background: meal.color, border:'none', color:'#000', fontSize:13, fontWeight:700,
+              }}>Save</button>
+              <button onClick={() => setStoreMealPrompt(false)} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'transparent', border:`1px solid ${meal.border}`, color:'#8bbdd8', fontSize:13,
+              }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Override confirmation modal */}
+      {overridePrompt && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
+          <div style={{ background:'#0e1a10', border:'1px solid #2d6a2d', borderRadius:16,
+            padding:'24px 20px', margin:'0 24px', maxWidth:320, width:'100%', textAlign:'center' }}>
+            <div style={{ fontSize:28, marginBottom:10 }}>💾</div>
+            <div style={{ fontSize:15, fontWeight:700, color:'#c8f0d0', marginBottom:8 }}>
+              Already in Library
+            </div>
+            <div style={{ fontSize:12, color:'#7abf8a', marginBottom:20 }}>
+              <strong style={{ color:'#9ae0b0' }}>{overridePrompt.name}</strong> is already saved.
+              Update it with these macros?
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => commitSaveRow(overridePrompt)} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'#1a7a4a', border:'none', color:'#fff', fontSize:13, fontWeight:700,
+              }}>Yes, Update</button>
+              <button onClick={() => setOverridePrompt(null)} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'transparent', border:'1px solid #2d6a2d', color:'#7abf8a', fontSize:13,
+              }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Trend Graph ───────────────────────────────────────────────────────────────
-function TrendGraph({ history, goalCal }) {
+function TrendGraph({ history, goalCal, showBodyweight }) {
   const [mode,   setMode]   = useState('calories'); // 'calories' | 'weight'
   const [period, setPeriod] = useState('week');     // 'week' | 'month' | 'year'
 
@@ -572,7 +788,7 @@ function TrendGraph({ history, goalCal }) {
       {/* Header row */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div style={{ display:'flex', gap:5 }}>
-          {['calories','weight'].map(m => (
+          {['calories', ...(showBodyweight ? ['weight'] : [])].map(m => (
             <button key={m} onClick={() => setMode(m)} style={{
               padding:'4px 10px', borderRadius:8, fontSize:11, cursor:'pointer', fontWeight:600,
               background: mode === m ? (m==='calories'?'#2a1a4a':'#1a2a1a') : 'transparent',
@@ -669,6 +885,7 @@ export default function DietScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCal, setShowCal] = useState(false);
   const [history, setHistory] = useState(stored.history || {});
+  const showBodyweight = loadSettings().showBodyweightDiet;
 
   const dateKey    = selectedDate.toISOString().slice(0,10);
   const blankMeals = { breakfast:[], lunch:[], dinner:[], snacks:[] };
@@ -819,7 +1036,7 @@ export default function DietScreen() {
         </div>
       )}
 
-      <div className="scroll" style={{ padding:'6px 14px 8px', overflowY: showTDEE ? 'auto' : 'hidden' }}>
+      <div className="scroll" style={{ padding:'6px 14px 8px' }}>
         {showTDEE && (
           <TDEEPanel tdeeData={tdeeData} setTdeeData={setTdeeData}
             tdee={tdee} goalCal={goalCal} onSave={() => setShowTDEE(false)} />
@@ -855,8 +1072,8 @@ export default function DietScreen() {
           })}
         </div>
 
-        {/* Weight input */}
-        <div style={{ background:'#0e0818', border:'1px solid #2a1a3a', borderRadius:10, padding:'8px 12px', marginTop:8 }}>
+        {/* Weight input — only when setting is on */}
+        {showBodyweight && <div style={{ background:'#0e0818', border:'1px solid #2a1a3a', borderRadius:10, padding:'8px 12px', marginTop:8 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <span style={{ fontSize:11, color:'#6a4a8a', flex:1 }}>
               {selectedDate.toDateString() === new Date().toDateString() ? "Today's Weight" : `Weight · ${selectedDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
@@ -891,10 +1108,10 @@ export default function DietScreen() {
               {history[dateKey].weightTime && <span style={{ color:'#4a3a5a' }}> · {history[dateKey].weightTime}</span>}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Trend graph */}
-        <TrendGraph history={history} goalCal={goalCal} />
+        <TrendGraph history={history} goalCal={goalCal} showBodyweight={showBodyweight} />
 
         {/* Calories remaining bar */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',

@@ -1,6 +1,15 @@
 const SETS_KEY       = 'wt_sets';
 const EXER_KEY       = 'wt_exercises';
 const PRESCRIBED_KEY = 'wt_prescribed';
+const SETTINGS_KEY   = 'wt_settings';
+
+export function loadSettings() {
+  try { return { showBodyweightProgress: false, showBodyweightDiet: false, ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
+  catch { return { showBodyweightProgress: false, showBodyweightDiet: false }; }
+}
+export function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
 
 export const DEFAULT_EXERCISES = [
   // Strength
@@ -129,8 +138,8 @@ export const FIELD_DEFS = {
 };
 
 export const METRIC_DEFS = {
-  strength:   ['weight','reps','rpe'],
-  bodyweight: ['reps','added','rpe'],
+  strength:   ['weight','reps','volume','rpe'],
+  bodyweight: ['reps','added','volume','rpe'],
   cardio:     ['dist','dur','hr'],
   sprint:     ['stime'],
   cycling:    ['dist','dur','speed','power'],
@@ -138,12 +147,21 @@ export const METRIC_DEFS = {
 };
 
 export const METRIC_LABELS = {
-  weight:'Weight (lb)',reps:'Reps',rpe:'RPE',
+  weight:'Weight (lb)',reps:'Reps',volume:'Volume',rpe:'RPE',
   added:'Added (lb)',dist:'Distance (mi)',dur:'Duration (min)',
   pace:'Pace',hr:'Avg HR',cal:'Calories',
   stime:'Time (sec)',sdist:'Distance',wind:'Wind',surf:'Surface',
   speed:'Speed (mph)',power:'Power (W)',elev:'Elevation (ft)',
 };
+
+// Volume = weight × reps per set (handles eachSide "e" suffix)
+export function calcSetVolume(set) {
+  const weight = parseFloat(set.vals.weight) || parseFloat(set.vals.added) || 0;
+  const repsRaw = String(set.vals.reps || '0');
+  const reps = parseInt(repsRaw.match(/\d+/)?.[0]) || 0;
+  const eachSide = /e$|each/i.test(repsRaw);
+  return weight * reps * (eachSide ? 2 : 1);
+}
 
 export const PR_METRIC = {
   strength:'weight', bodyweight:'reps', cardio:'dist', sprint:'stime', cycling:'dist', jumprope:'reps',
@@ -211,6 +229,24 @@ export function getGenericPRs(sets, exerciseName, type) {
   });
 
   return { prSet, best: (best === Infinity || best === -Infinity) ? null : best };
+}
+
+// Best single-session volume for an exercise (strength + bodyweight only)
+export function getVolumePR(sets, exerciseName) {
+  const exSets = sets.filter(s =>
+    s.ex === exerciseName &&
+    (s.type === 'strength' || s.type === 'bodyweight')
+  );
+  if (!exSets.length) return null;
+  const byDate = {};
+  exSets.forEach(s => {
+    const vol = calcSetVolume(s);
+    if (vol > 0) byDate[s.date] = (byDate[s.date] || 0) + vol;
+  });
+  const sessions = Object.values(byDate);
+  if (!sessions.length) return null;
+  const best = Math.max(...sessions);
+  return { val: best.toLocaleString() + ' lb', label: 'Volume PR' };
 }
 
 // Backward-compatible single PR summary for the PR strip at top of History
@@ -330,6 +366,41 @@ function mergeProgram(workouts) {
   });
   return merged;
 }
+
+// ─── Seed: Coach Smith program (baked in so fresh installs load immediately) ──
+const COACH_SEED = {"_coach_export":true,"client":"Coach Smith","workouts":[{"date":"Jun 8","name":"Legs Day","exercises":[{"name":"Squat","sets":3,"reps":5},{"name":"Back Extension w/ Rotation","sets":3,"reps":"8 each"},{"name":"SL Hamstring Curl","sets":3,"reps":"10 each"},{"name":"SL Quad Extension","sets":3,"reps":"10 each"},{"name":"SL RDL","sets":3,"reps":"8 each"}],"circuits":[{"name":"Hard Abs","exercises":[{"name":"Dragon Flag","sets":3,"reps":6},{"name":"Toes-to-Bar","sets":3,"reps":6},{"name":"Ab Wheel Rollouts","sets":3,"reps":8},{"name":"PB Rollback","sets":3,"reps":8}]}]},{"date":"Jun 9","name":"Chest and Arms","exercises":[{"name":"Bench","sets":3,"reps":10},{"name":"SA DB Row","sets":3,"reps":"10 each"},{"name":"Dips","sets":3,"reps":15},{"name":"Lat Pulldowns","sets":3,"reps":20},{"name":"BB Curl","sets":2,"reps":20},{"name":"SA Preacher Curl","sets":3,"reps":"15 each"},{"name":"DB Hammer Curl","sets":2,"reps":20},{"name":"DB Concentration Curl","sets":2,"reps":"20 each"},{"name":"Tricep Rope Extension","sets":2,"reps":20},{"name":"Pushups","sets":2,"reps":50}],"circuits":[]},{"date":"Jun 10","name":"Cardio - Interval Sprints","exercises":[{"name":"Interval Sprints 100m","sets":1,"reps":8},{"name":"Interval Sprints 100m","sets":1,"reps":7}],"circuits":[]},{"date":"Jun 11","name":"Legs Day","exercises":[{"name":"Squat","sets":3,"reps":5},{"name":"Back Extension w/ Rotation","sets":3,"reps":"8 each"},{"name":"SL Hamstring Curl","sets":3,"reps":"10 each"},{"name":"SL Quad Extension","sets":3,"reps":"10 each"},{"name":"SL RDL","sets":3,"reps":"8 each"}],"circuits":[{"name":"Hard Abs","exercises":[{"name":"Dragon Flag","sets":3,"reps":6},{"name":"Toes-to-Bar","sets":3,"reps":6},{"name":"Ab Wheel Rollouts","sets":3,"reps":8},{"name":"PB Rollback","sets":3,"reps":8}]}]},{"date":"Jun 12","name":"Chest and Arms","exercises":[{"name":"Bench","sets":3,"reps":10},{"name":"SA DB Row","sets":3,"reps":"10 each"},{"name":"Dips","sets":3,"reps":15},{"name":"Lat Pulldowns","sets":3,"reps":20},{"name":"BB Curl","sets":2,"reps":20},{"name":"SA Preacher Curl","sets":3,"reps":"15 each"},{"name":"DB Hammer Curl","sets":2,"reps":20},{"name":"DB Concentration Curl","sets":2,"reps":"20 each"},{"name":"Tricep Rope Extension","sets":2,"reps":20},{"name":"Pushups","sets":2,"reps":50}],"circuits":[]},{"date":"Jun 13","name":"Cardio - Interval Sprints","exercises":[{"name":"Interval Sprints 100m","sets":2,"reps":8}],"circuits":[]},{"date":"Jun 15","name":"Legs Day","exercises":[{"name":"Squat","sets":3,"reps":5},{"name":"Back Extension w/ Rotation","sets":3,"reps":"8 each"},{"name":"SL Hamstring Curl","sets":3,"reps":"10 each"},{"name":"SL Quad Extension","sets":3,"reps":"10 each"},{"name":"SL RDL","sets":3,"reps":"8 each"}],"circuits":[{"name":"Hard Abs","exercises":[{"name":"Dragon Flag","sets":3,"reps":6},{"name":"Toes-to-Bar","sets":3,"reps":6},{"name":"Ab Wheel Rollouts","sets":3,"reps":8},{"name":"PB Rollback","sets":3,"reps":8}]}]},{"date":"Jun 16","name":"Chest and Arms","exercises":[{"name":"Bench","sets":3,"reps":10},{"name":"SA DB Row","sets":3,"reps":"10 each"},{"name":"Dips","sets":3,"reps":15},{"name":"Lat Pulldowns","sets":3,"reps":20},{"name":"BB Curl","sets":2,"reps":20},{"name":"SA Preacher Curl","sets":3,"reps":"15 each"},{"name":"DB Hammer Curl","sets":2,"reps":20},{"name":"DB Concentration Curl","sets":2,"reps":"20 each"},{"name":"Tricep Rope Extension","sets":2,"reps":20},{"name":"Pushups","sets":2,"reps":50}],"circuits":[]},{"date":"Jun 17","name":"Cardio - Interval Sprints","exercises":[{"name":"Interval Sprints 100m","sets":1,"reps":8},{"name":"Interval Sprints 100m","sets":1,"reps":7}],"circuits":[]},{"date":"Jun 18","name":"Legs Day","exercises":[{"name":"Squat","sets":3,"reps":5},{"name":"Back Extension w/ Rotation","sets":3,"reps":"8 each"},{"name":"SL Hamstring Curl","sets":3,"reps":"10 each"},{"name":"SL Quad Extension","sets":3,"reps":"10 each"},{"name":"SL RDL","sets":3,"reps":"8 each"}],"circuits":[{"name":"Hard Abs","exercises":[{"name":"Dragon Flag","sets":3,"reps":6},{"name":"Toes-to-Bar","sets":3,"reps":6},{"name":"Ab Wheel Rollouts","sets":3,"reps":8},{"name":"PB Rollback","sets":3,"reps":8}]}]},{"date":"Jun 19","name":"Chest and Arms","exercises":[{"name":"Bench","sets":3,"reps":10},{"name":"SA DB Row","sets":3,"reps":"10 each"},{"name":"Dips","sets":3,"reps":15},{"name":"Lat Pulldowns","sets":3,"reps":20},{"name":"BB Curl","sets":2,"reps":20},{"name":"SA Preacher Curl","sets":3,"reps":"15 each"},{"name":"DB Hammer Curl","sets":2,"reps":20},{"name":"DB Concentration Curl","sets":2,"reps":"20 each"},{"name":"Tricep Rope Extension","sets":2,"reps":20},{"name":"Pushups","sets":2,"reps":50}],"circuits":[]},{"date":"Jun 20","name":"Cardio - Interval Sprints","exercises":[{"name":"Interval Sprints 100m","sets":2,"reps":8}],"circuits":[]},{"date":"Jun 22","name":"Legs Day","exercises":[{"name":"Squat","sets":3,"reps":5},{"name":"Back Extension w/ Rotation","sets":3,"reps":"8 each"},{"name":"SL Hamstring Curl","sets":3,"reps":"10 each"},{"name":"SL Quad Extension","sets":3,"reps":"10 each"},{"name":"SL RDL","sets":3,"reps":"8 each"}],"circuits":[{"name":"Hard Abs","exercises":[{"name":"Dragon Flag","sets":3,"reps":6},{"name":"Toes-to-Bar","sets":3,"reps":6},{"name":"Ab Wheel Rollouts","sets":3,"reps":8},{"name":"PB Rollback","sets":3,"reps":8}]}]},{"date":"Jun 23","name":"Chest and Arms","exercises":[{"name":"Bench","sets":3,"reps":10},{"name":"SA DB Row","sets":3,"reps":"10 each"},{"name":"Dips","sets":3,"reps":15},{"name":"Lat Pulldowns","sets":3,"reps":20},{"name":"BB Curl","sets":2,"reps":20},{"name":"SA Preacher Curl","sets":3,"reps":"15 each"},{"name":"DB Hammer Curl","sets":2,"reps":20},{"name":"DB Concentration Curl","sets":2,"reps":"20 each"},{"name":"Tricep Rope Extension","sets":2,"reps":20},{"name":"Pushups","sets":2,"reps":50}],"circuits":[]},{"date":"Jun 24","name":"Cardio - Interval Sprints","exercises":[{"name":"Interval Sprints 100m","sets":1,"reps":8},{"name":"Interval Sprints 100m","sets":1,"reps":7}],"circuits":[]},{"date":"Jun 25","name":"Legs Day","exercises":[{"name":"Squat","sets":3,"reps":5},{"name":"Back Extension w/ Rotation","sets":3,"reps":"8 each"},{"name":"SL Hamstring Curl","sets":3,"reps":"10 each"},{"name":"SL Quad Extension","sets":3,"reps":"10 each"},{"name":"SL RDL","sets":3,"reps":"8 each"}],"circuits":[{"name":"Hard Abs","exercises":[{"name":"Dragon Flag","sets":3,"reps":6},{"name":"Toes-to-Bar","sets":3,"reps":6},{"name":"Ab Wheel Rollouts","sets":3,"reps":8},{"name":"PB Rollback","sets":3,"reps":8}]}]},{"date":"Jun 26","name":"Chest and Arms","exercises":[{"name":"Bench","sets":3,"reps":10},{"name":"SA DB Row","sets":3,"reps":"10 each"},{"name":"Dips","sets":3,"reps":15},{"name":"Lat Pulldowns","sets":3,"reps":20},{"name":"BB Curl","sets":2,"reps":20},{"name":"SA Preacher Curl","sets":3,"reps":"15 each"},{"name":"DB Hammer Curl","sets":2,"reps":20},{"name":"DB Concentration Curl","sets":2,"reps":"20 each"},{"name":"Tricep Rope Extension","sets":2,"reps":20},{"name":"Pushups","sets":2,"reps":50}],"circuits":[]},{"date":"Jun 27","name":"Cardio - Interval Sprints","exercises":[{"name":"Interval Sprints 100m","sets":2,"reps":8}],"circuits":[]}]};
+
+function initSeed() {
+  if (localStorage.getItem(PRESCRIBED_KEY)) return;
+  // Transform coach JSON into prescribed format (same logic as Settings import)
+  const prescribed = COACH_SEED.workouts.map(w => {
+    const circuitExes = (w.circuits || []).flatMap(ct =>
+      ct.exercises.map((ex, j) => ({
+        ...ex,
+        inCircuit: true,
+        circuitLabel: j === 0 ? (ct.name || 'Circuit') : undefined,
+        isLastInCircuit: j === ct.exercises.length - 1,
+      }))
+    );
+    return { ...w, exercises: [...(w.exercises || []), ...circuitExes] };
+  });
+  localStorage.setItem(PRESCRIBED_KEY, JSON.stringify(prescribed));
+  // Seed custom exercises if not yet stored
+  if (!localStorage.getItem(EXER_KEY)) {
+    const known = new Set(DEFAULT_EXERCISES.map(e => e.name.toLowerCase()));
+    const toAdd = [];
+    COACH_SEED.workouts.forEach(w => {
+      [...(w.exercises || []), ...(w.circuits || []).flatMap(c => c.exercises || [])].forEach(ex => {
+        if (ex.name && !known.has(ex.name.toLowerCase())) {
+          known.add(ex.name.toLowerCase());
+          toAdd.push({ name: ex.name, type: ex.type || 'strength' });
+        }
+      });
+    });
+    if (toAdd.length) localStorage.setItem(EXER_KEY, JSON.stringify([...DEFAULT_EXERCISES, ...toAdd]));
+  }
+}
+try { initSeed(); } catch(e) {}
 
 export function loadPrescribed() {
   try {

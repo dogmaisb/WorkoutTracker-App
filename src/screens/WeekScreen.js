@@ -3,6 +3,34 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { loadSets, addSet, updateSet, deleteSet, FIELD_DEFS, setMainValue, getPrescribedForDate, loadExercises } from '../storage';
 
+const REST_QUOTES = [
+  { quote: "Champions are built in the off days.", author: "Unknown" },
+  { quote: "Rest when you're weary. Refresh and renew yourself, your body, your mind, your spirit.", author: "Ralph Marston" },
+  { quote: "Recovery is just as important as the workout itself.", author: "Unknown" },
+  { quote: "Muscles are torn in the gym, fed in the kitchen, and built in bed.", author: "Unknown" },
+  { quote: "The secret of getting ahead is getting started — after a proper rest.", author: "Mark Twain" },
+  { quote: "Your body is a reflection of your lifestyle. Rest is part of that lifestyle.", author: "Unknown" },
+  { quote: "Take rest; a field that has rested gives a bountiful crop.", author: "Ovid" },
+  { quote: "Overtraining is real. Your best gains come while you sleep.", author: "Unknown" },
+  { quote: "It's not a setback, it's a step back to launch forward.", author: "Unknown" },
+  { quote: "The body achieves what the mind believes — and the mind needs rest too.", author: "Unknown" },
+  { quote: "An athlete's greatest weapon is to stay hungry, stay rested.", author: "Unknown" },
+  { quote: "Without rest, there is no recovery. Without recovery, there is no growth.", author: "Unknown" },
+  { quote: "Hustle for results. Rest for recovery. Both are non-negotiable.", author: "Unknown" },
+  { quote: "You can't pour from an empty cup. Refill today.", author: "Unknown" },
+  { quote: "Even the greatest athletes in the world schedule rest days. So should you.", author: "Unknown" },
+  { quote: "Rest is not quitting. Rest is fueling the fire.", author: "Unknown" },
+  { quote: "Don't underestimate the power of doing nothing.", author: "Unknown" },
+  { quote: "Sleep is the best performance-enhancing drug.", author: "Matthew Walker" },
+  { quote: "The pain you feel today is the strength you'll feel tomorrow.", author: "Unknown" },
+  { quote: "Adaptation happens during rest, not during training.", author: "Unknown" },
+  { quote: "Sometimes the most productive thing you can do is relax.", author: "Mark Black" },
+  { quote: "A rested athlete is a dangerous athlete.", author: "Unknown" },
+  { quote: "Recovery is not weakness. It's part of the process.", author: "Unknown" },
+  { quote: "You grow when you rest, not when you grind.", author: "Unknown" },
+  { quote: "Hard work beats talent when talent doesn't rest.", author: "Unknown" },
+];
+
 const EXERCISES = [
   // Strength
   { name: 'Bench press',         type: 'strength'   },
@@ -246,17 +274,43 @@ export default function WeekScreen({
   useEffect(() => { setCheckedItems(new Set()); }, [selectedDate]);
 
   // Auto-detect "each side" from prescribed reps (e.g. "8 each", "10e", "8each")
+  // Works for both the full log page (logExercise set) and quick log (logExercise null, match by name)
   useEffect(() => {
-    if (logExercise === null) { setEachSide(false); return; }
     const pres = getPrescribedForDate(selectedDate);
-    const presEx = pres && pres.exercises[logExercise.pIdx];
+    let presEx = null;
+    if (logExercise !== null) {
+      presEx = pres && pres.exercises[logExercise.pIdx];
+    } else if (pres && curEx) {
+      presEx = pres.exercises.find(e => e.name.toLowerCase() === curEx.name.toLowerCase());
+    }
     if (presEx && presEx.reps != null) {
       const r = String(presEx.reps).toLowerCase();
       setEachSide(/each|e$/.test(r));
     } else {
       setEachSide(false);
     }
-  }, [logExercise, selectedDate]);
+  }, [logExercise, selectedDate, curExIdx]);
+
+  // Auto-populate quick log fields from last set logged today for this exercise
+  useEffect(() => {
+    if (editingSetId !== null || !curEx) return;
+    const dateStr = format(selectedDate, 'MMM d');
+    const todaySets = sets.filter(s =>
+      s.ex.toLowerCase() === curEx.name.toLowerCase() &&
+      s.date === dateStr
+    );
+    if (todaySets.length > 0) {
+      const last = todaySets[todaySets.length - 1];
+      setFieldVals(v => {
+        // Only overwrite if the user hasn't typed a primary value yet
+        // Ignore rest/rpe/hr which get set automatically by sub-components
+        const hasPrimary = !!(v.weight || v.reps || v.added || v.dist || v.stime);
+        if (hasPrimary) return v;
+        const reps = String(last.vals.reps || '').replace(/e$/i, '');
+        return { ...v, weight: last.vals.weight || '', reps };
+      });
+    }
+  }, [curExIdx, sets.length, selectedDate]);
 
   // Merge hardcoded list with any custom exercises added via coach import
   const allExercises = (() => {
@@ -307,6 +361,28 @@ export default function WeekScreen({
   const curEx      = allExercises[curExIdx];
   const isRunning  = curEx.name === 'Running';
   const effectType = isRunning && sprintMode ? 'sprint' : curEx.type;
+
+  // Prescribed entry for the currently selected exercise (works on both log page and quick log)
+  const prescribedCurEx = (() => {
+    if (!prescribed) return null;
+    if (logExercise !== null) return prescribed.exercises[logExercise.pIdx] || null;
+    return prescribed.exercises.find(e => e.name.toLowerCase() === curEx.name.toLowerCase()) || null;
+  })();
+
+  const prWeight = (() => {
+    if (!curEx) return null;
+    const targetReps = prescribedCurEx
+      ? parseInt(String(prescribedCurEx.reps).match(/\d+/)?.[0]) || null
+      : null;
+    const candidates = sets.filter(s =>
+      s.ex.toLowerCase() === curEx.name.toLowerCase() &&
+      s.vals?.weight &&
+      (targetReps === null || parseInt(String(s.vals.reps).match(/\d+/)?.[0]) === targetReps)
+    );
+    if (!candidates.length) return null;
+    return Math.max(...candidates.map(s => parseFloat(s.vals.weight) || 0)) || null;
+  })();
+
   const fieldDef   = FIELD_DEFS[effectType] || FIELD_DEFS.strength;
 
   function setVal(id, val) { setFieldVals(p => ({ ...p, [id]: val })); }
@@ -331,7 +407,8 @@ export default function WeekScreen({
   function doSave() {
     const now = new Date();
     const valsToSave = { ...fieldVals };
-    if (eachSide && valsToSave.reps) valsToSave.reps = String(valsToSave.reps).replace(/e$/i, '') + 'e';
+    const isEach = eachSide || (prescribedCurEx?.reps != null && /each|e$/i.test(String(prescribedCurEx.reps)));
+    if (isEach && valsToSave.reps) valsToSave.reps = String(valsToSave.reps).replace(/e$/i, '') + 'e';
     if ((effectType === 'cardio' || effectType === 'cycling') && valsToSave.dist) {
       valsToSave.distUnit = distUnit;
     }
@@ -405,10 +482,33 @@ export default function WeekScreen({
           <button className="back-btn" onClick={() => setLogExercise(null)}>← Workout</button>
 
           {/* Exercise header */}
-          <div style={{ marginBottom:10 }}>
-            <div style={{ fontSize:20, fontWeight:700, color:'#f0f8ff' }}>{curEx.name}</div>
-            <div style={{ fontSize:11, color:'#8bbdd8', marginTop:2 }}>{curEx.type.charAt(0).toUpperCase()+curEx.type.slice(1)}</div>
-          </div>
+          {(() => {
+            const sessionVol = todaySets.reduce((sum, s) => {
+              const w = parseFloat(s.vals.weight) || parseFloat(s.vals.added) || 0;
+              const repsRaw = String(s.vals.reps || '0');
+              const r = parseInt(repsRaw.match(/\d+/)?.[0]) || 0;
+              const each = /e$|each/i.test(repsRaw);
+              return sum + w * r * (each ? 2 : 1);
+            }, 0);
+            const showVol = sessionVol > 0;
+            return (
+              <div style={{ marginBottom:10 }}>
+                <div style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
+                  <div style={{ fontSize:20, fontWeight:700, color:'#f0f8ff' }}>{curEx.name}</div>
+                  {showVol && (
+                    <div style={{
+                      fontSize:11, fontWeight:700, color:'#00ff88',
+                      background:'rgba(0,255,136,0.08)', border:'1px solid rgba(0,255,136,0.25)',
+                      borderRadius:8, padding:'2px 8px', lineHeight:1.6,
+                    }}>
+                      {Math.round(sessionVol).toLocaleString()} lb vol
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize:11, color:'#8bbdd8', marginTop:2 }}>{curEx.type.charAt(0).toUpperCase()+curEx.type.slice(1)}</div>
+              </div>
+            );
+          })()}
 
           {/* Prescribed target */}
           {presEx && (
@@ -419,13 +519,14 @@ export default function WeekScreen({
                   const target = parseInt(presEx.sets) || 0;
                   const done   = todaySets.length;
                   const left   = Math.max(0, target - done);
+                  const full   = `${target} sets × ${presEx.reps || '—'} reps`;
+                  if (left === 0 && done > 0) {
+                    return <span style={{ textDecoration:'line-through', color:'#3a7a5a' }}>{full}</span>;
+                  }
                   return (
                     <>
                       {done > 0 ? (
-                        <>
-                          <span style={{ textDecoration:'line-through', color:'#3a7a5a', marginRight:5 }}>{target}</span>
-                          <span style={{ color: left === 0 ? '#4adbaa' : '#5adb9a' }}>{left}</span>
-                        </>
+                        <><span style={{ textDecoration:'line-through', color:'#3a7a5a', marginRight:5 }}>{target}</span><span style={{ color:'#5adb9a' }}>{left}</span></>
                       ) : (
                         <span>{target}</span>
                       )}
@@ -468,7 +569,7 @@ export default function WeekScreen({
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                       <div style={{ fontSize:13, fontWeight:600, color:'#f0f8ff' }}>
                         {setMainValue(s)}
-                        {s.vals.reps && (s.type === 'strength' || s.type === 'bodyweight') && (
+                        {s.vals.reps && (s.vals.weight || s.vals.added) && (s.type === 'strength' || s.type === 'bodyweight') && (
                           <span style={{ color:'#8bbdd8', fontWeight:400, marginLeft:5 }}>× {s.vals.reps} reps</span>
                         )}
                       </div>
@@ -519,7 +620,7 @@ export default function WeekScreen({
                         <RestTimerField defaultDur={parseInt(f.ph) || 90} onChange={v => setVal('rest', v)} />
                       ) : isWeightField ? (
                         <div style={{ display:'flex', gap:4 }}>
-                          <input className="input-field" style={{ flex:1 }} placeholder={`${f.ph} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                          <input className="input-field" style={{ flex:1 }} placeholder={`${prWeight != null ? prWeight : f.ph} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
                           <button onClick={() => setWeightUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 10px', fontSize:12, color:'#5adb9a', cursor:'pointer', fontWeight:700, minWidth:36 }}>{weightUnit}</button>
                         </div>
                       ) : isDistField ? (
@@ -538,7 +639,7 @@ export default function WeekScreen({
                         </div>
                       ) : (
                         <input className="input-field"
-                          placeholder={f.id === 'reps' && eachSide && presEx ? (String(presEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph}
+                          placeholder={f.id === 'reps' && eachSide && prescribedCurEx ? (String(prescribedCurEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph}
                           value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)}
                           type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
                       )}
@@ -774,7 +875,17 @@ export default function WeekScreen({
                         >
                           {checked && <span style={{ color:'#fff', fontSize:10, lineHeight:1 }}>✓</span>}
                         </div>
-                        <div className="ex-name" style={{ textDecoration: checked ? 'line-through' : 'none' }}>{ex.name}</div>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <div className="ex-name" style={{ textDecoration: checked ? 'line-through' : 'none' }}>{ex.name}</div>
+                          {checked && (
+                            <span style={{
+                              fontSize:8, fontWeight:800, color:'#4adbaa',
+                              background:'rgba(74,219,170,0.12)', border:'1px solid rgba(74,219,170,0.35)',
+                              borderRadius:20, padding:'2px 7px', letterSpacing:'0.05em',
+                              whiteSpace:'nowrap', lineHeight:1.4,
+                            }}>DONE!</span>
+                          )}
+                        </div>
                       </div>
                       <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                         {(() => {
@@ -785,12 +896,14 @@ export default function WeekScreen({
                                 <span style={{ fontSize:9, color:'#ffb060', fontWeight:700, whiteSpace:'nowrap' }}>{left} left!</span>
                               )}
                               <span className="badge">
-                                {done === 0 ? (
+                                {checked ? (
+                                  <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}×{fmtReps(ex.reps)}</span>
+                                ) : done === 0 ? (
                                   <>{target}×{fmtReps(ex.reps)}</>
                                 ) : (
                                   <>
                                     <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}</span>
-                                    <span style={{ color: left === 0 ? '#4adbaa' : '#ffb060', marginLeft:3 }}>{left}</span>
+                                    <span style={{ color:'#ffb060', marginLeft:3 }}>{left}</span>
                                     ×{fmtReps(ex.reps)}
                                   </>
                                 )}
@@ -846,14 +959,22 @@ export default function WeekScreen({
               })()}
             </div>
           </>
-        ) : (
-          <>
-            <div className="section-label" style={{ marginTop:4 }}>Workout</div>
-            <div className="card">
-              <div style={{ fontSize:12, color:'#3a5a3a', textAlign:'center', padding:'10px 0' }}>No workout prescribed for this day</div>
+        ) : (() => {
+          const daySeed = [...selectedDate].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+          const { quote, author } = REST_QUOTES[daySeed % REST_QUOTES.length];
+          return (
+            <div style={{ textAlign:'center', padding:'28px 10px 18px' }}>
+              <div style={{ fontSize:36, marginBottom:8 }}>🛌</div>
+              <div style={{ fontSize:26, fontWeight:800, color:'#4adbaa', letterSpacing:'0.02em', marginBottom:18 }}>Rest Day!</div>
+              <div style={{ background:'rgba(74,219,170,0.06)', border:'1px solid rgba(74,219,170,0.18)', borderRadius:14, padding:'18px 16px', maxWidth:320, margin:'0 auto' }}>
+                <div style={{ fontSize:13, color:'#c0e8d8', lineHeight:1.7, fontStyle:'italic', marginBottom:10 }}>
+                  "{quote}"
+                </div>
+                <div style={{ fontSize:11, color:'#3a7a5a', fontWeight:600 }}>— {author}</div>
+              </div>
             </div>
-          </>
-        )}
+          );
+        })()}
 
         <div style={{ height:10 }} />
         </>)}
@@ -884,12 +1005,12 @@ export default function WeekScreen({
               const isSprintDist  = f.id === 'sdist' && effectType === 'sprint';
               return (
                 <div key={isRestField ? `rest-${curExIdx}` : f.id} className="field-wrap">
-                  <label className="field-label">{f.label}</label>
+                  <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:'#5adb9a',fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
                   {isRestField ? (
                     <RestTimerField defaultDur={parseInt(f.ph) || 90} onChange={v => setVal('rest', v)} />
                   ) : isWeightField ? (
                     <div style={{ display:'flex', gap:4 }}>
-                      <input className="input-field" style={{ flex:1 }} placeholder={`${f.ph} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                      <input className="input-field" style={{ flex:1 }} placeholder={`${prWeight != null ? prWeight : f.ph} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
                       <button onClick={() => setWeightUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 10px', fontSize:12, color:'#5adb9a', cursor:'pointer', fontWeight:700, minWidth:36 }}>{weightUnit}</button>
                     </div>
                   ) : isDistField ? (
@@ -907,7 +1028,10 @@ export default function WeekScreen({
                       </select>
                     </div>
                   ) : (
-                    <input className="input-field" placeholder={f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
+                    <input className="input-field"
+                      placeholder={f.id === 'reps' && eachSide && prescribedCurEx ? (String(prescribedCurEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph}
+                      value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)}
+                      type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
                   )}
                 </div>
               );

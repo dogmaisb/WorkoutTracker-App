@@ -80,6 +80,23 @@ function playCountdownThenCue() {
 }
 
 // - helpers -
+// Prevents screen from auto-locking while a timer is active
+function useWakeLock(active) {
+  const lockRef = useRef(null);
+  useEffect(() => {
+    if (!navigator.wakeLock) return;
+    if (active) {
+      navigator.wakeLock.request('screen')
+        .then(lock => { lockRef.current = lock; })
+        .catch(() => {});
+    } else {
+      lockRef.current?.release().catch(() => {});
+      lockRef.current = null;
+    }
+    return () => { lockRef.current?.release().catch(() => {}); lockRef.current = null; };
+  }, [active]);
+}
+
 function fmtCountdown(sec) {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
@@ -92,6 +109,28 @@ function fmtMs(ms) {
   const m  = Math.floor(s / 60);
   const ds = Math.floor((ms % 1000) / 100);
   return `${m}:${(s % 60).toString().padStart(2,'0')}.${ds}`;
+}
+
+// ── Push Notifications ────────────────────────────────────────────────────────
+function notifSupported() { return typeof Notification !== 'undefined'; }
+
+async function ensureNotifPermission() {
+  if (!notifSupported()) return;
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+}
+
+function sendNotif(title, body) {
+  if (!notifSupported() || Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, {
+      body,
+      icon: '/WorkoutTracker-App/logo192.png',
+      badge: '/WorkoutTracker-App/logo192.png',
+      vibrate: [200, 100, 200],
+    });
+  } catch(e) {}
 }
 
 const REST_PRESETS = [30, 60, 90, 120, 180, 300];
@@ -290,6 +329,7 @@ function RestTimer() {
   const [remain,  setRemain]  = useState(90);
   const [running, setRunning] = useState(false);
   const [done,    setDone]    = useState(false);
+  useWakeLock(running);
   const [selH,    setSelH]    = useState(0);
   const [selM,    setSelM]    = useState(1);
   const [selS,    setSelS]    = useState(30);
@@ -314,30 +354,43 @@ function RestTimer() {
   }
   function toggle() {
     if (done) { setRemain(total); setDone(false); return; }
+    if (!running) ensureNotifPermission();
     setRunning(r => !r);
   }
   function reset() { clearInterval(ref.current); setRunning(false); setDone(false); setRemain(total); }
 
+  // Notify when timer is done
   useEffect(() => {
-    if (!running) { clearInterval(ref.current); return; }
-    ref.current = setInterval(() => {
-      setRemain(r => {
-        if (r <= 1) { clearInterval(ref.current); setRunning(false); setDone(true); return 0; }
-        return r - 1;
-      });
-    }, 1000);
-    return () => clearInterval(ref.current);
+    if (done) sendNotif('Timer done! ✓', 'Your countdown has finished.');
+  }, [done]);
+
+  const endRef    = useRef(null);
+  const remainRef = useRef(remain);
+  useEffect(() => { remainRef.current = remain; }, [remain]);
+
+  useEffect(() => {
+    if (!running) { clearInterval(ref.current); endRef.current = null; return; }
+    endRef.current = Date.now() + remainRef.current * 1000;
+    function tick() {
+      const r = Math.ceil((endRef.current - Date.now()) / 1000);
+      if (r <= 0) { clearInterval(ref.current); setRunning(false); setDone(true); setRemain(0); endRef.current = null; return; }
+      setRemain(r);
+    }
+    ref.current = setInterval(tick, 300);
+    const onVisible = () => { if (!document.hidden) tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(ref.current); document.removeEventListener('visibilitychange', onVisible); };
   }, [running]);
 
   return (
     <div className="scroll" style={{ padding:'16px 20px' }}>
-      {!running && !done && <div style={{ display:'flex', justifyContent:'center', alignItems:'flex-start', gap:4, marginBottom:20 }}>
+      <div style={{ display:'flex', justifyContent:'center', alignItems:'flex-start', gap:4, marginBottom:20, visibility: (running || done) ? 'hidden' : 'visible' }}>
         <DrumPicker value={selH} max={23} label="HRS" disabled={running} onChange={h => setDial(h, selMRef.current, selSRef.current)} />
         <span style={{ color:'#333', fontSize:36, fontWeight:700, lineHeight:`${ITEM_H}px`, marginTop:ITEM_H, alignSelf:'flex-start' }}>:</span>
         <DrumPicker value={selM} max={59} label="MIN" disabled={running} onChange={m => setDial(selHRef.current, m, selSRef.current)} />
         <span style={{ color:'#333', fontSize:36, fontWeight:700, lineHeight:`${ITEM_H}px`, marginTop:ITEM_H, alignSelf:'flex-start' }}>:</span>
         <DrumPicker value={selS} max={59} label="SEC" disabled={running} onChange={s => setDial(selHRef.current, selMRef.current, s)} />
-      </div>}
+      </div>
       <div className="ring-container" style={{ position:'relative', width:190, height:190, margin:'0 auto 16px' }}>
         <svg className="ring-svg" width="190" height="190" viewBox="0 0 190 190">
           <circle cx="95" cy="95" r={r} fill="none" stroke="#333" strokeWidth="10"/>
@@ -490,12 +543,16 @@ function Stopwatch() {
   const [lapStart, setLapStart] = useState(0);
   const ref   = useRef(null);
   const msRef = useRef(0);
+  useWakeLock(running);
 
   useEffect(() => {
     if (!running) { clearInterval(ref.current); return; }
     const start = Date.now() - msRef.current;
-    ref.current = setInterval(() => { const n=Date.now()-start; msRef.current=n; setMs(n); }, 50);
-    return () => clearInterval(ref.current);
+    function tick() { const n = Date.now() - start; msRef.current = n; setMs(n); }
+    ref.current = setInterval(tick, 50);
+    const onVisible = () => { if (!document.hidden) tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(ref.current); document.removeEventListener('visibilitychange', onVisible); };
   }, [running]);
 
   function toggle() { setRunning(r => !r); }
@@ -597,6 +654,7 @@ function IntervalTimer() {
 
   const { phase, round, remain, phaseTotal } = timer;
   const active = phase !== 'idle' && phase !== 'done';
+  useWakeLock(active);
 
   function phaseMeta(p) {
     if (p==='warmup') return { label:'GET READY', color:'#6a9a6a', border:'#3a6a3a' };
@@ -614,6 +672,7 @@ function IntervalTimer() {
 
   function start() {
     try { getAudioContext().resume(); } catch(e) {}
+    ensureNotifPermission();
     saveLastInterval(cfg);
     setLastTimer(cfg);
     setPaused(false);
@@ -622,6 +681,11 @@ function IntervalTimer() {
     const t = cfg.warmup > 0 ? cfg.warmup : cfg.work;
     setTimer({ phase:p, round:1, remain:t, phaseTotal:t });
   }
+
+  // Notify when all rounds complete
+  useEffect(() => {
+    if (phase === 'done') sendNotif('Workout complete! 🏆', `${round} round${round !== 1 ? 's' : ''} finished. Great work!`);
+  }, [phase]); // eslint-disable-line
 
   function stopTimer() {
     clearInterval(ref.current);
@@ -634,16 +698,27 @@ function IntervalTimer() {
     setPaused(p => !p);
   }
 
+  const phaseEndRef  = useRef(null);
+  const timerRef     = useRef(timer);
+  timerRef.current   = timer;
+
   // Single persistent interval — restarts only when active/paused changes, NOT on phase change
   useEffect(() => {
-    if (!active || paused) { clearInterval(ref.current); return; }
+    if (!active || paused) { clearInterval(ref.current); phaseEndRef.current = null; return; }
 
-    ref.current = setInterval(() => {
+    // Set end time from current timer state (use ref for freshness)
+    if (!phaseEndRef.current) {
+      phaseEndRef.current = Date.now() + timerRef.current.remain * 1000;
+    }
+
+    function tick() {
       setTimer(s => {
         if (s.remain <= 0) return s;
-        const newRemain = s.remain - 1;
+        const now = Date.now();
+        let newRemain = Math.ceil((phaseEndRef.current - now) / 1000);
         const c = cfgRef.current;
 
+        // Cue sounds based on countdown
         if (newRemain === 5 && !cuedRef.current.warning) {
           cuedRef.current.warning = true;
           playDoubleBeep();
@@ -654,16 +729,33 @@ function IntervalTimer() {
         }
 
         if (newRemain <= 0) {
-          const next = advance(s.phase, s.round, c);
-          cuedRef.current = { warning:false, countdown:false };
-          return { phase:next.phase, round:next.round, remain:next.remain, phaseTotal:next.total };
+          // Catch up through any phases skipped while backgrounded
+          let cur = { ...s };
+          let overshootMs = -phaseEndRef.current + now;
+          while (overshootMs >= 0) {
+            const next = advance(cur.phase, cur.round, c);
+            cuedRef.current = { warning:false, countdown:false };
+            if (next.phase === 'done' || next.remain === 0) {
+              phaseEndRef.current = null;
+              return { phase:next.phase, round:next.round, remain:0, phaseTotal:next.total };
+            }
+            overshootMs -= next.remain * 1000;
+            cur = { phase:next.phase, round:next.round, remain:next.remain, phaseTotal:next.total };
+          }
+          // Land in the correct phase with correct remaining
+          const catchupRemain = Math.ceil(-overshootMs / 1000);
+          phaseEndRef.current = Date.now() + catchupRemain * 1000;
+          return { ...cur, remain: catchupRemain };
         }
 
-        return { ...s, remain:newRemain };
+        return { ...s, remain: newRemain };
       });
-    }, 1000);
+    }
 
-    return () => clearInterval(ref.current);
+    ref.current = setInterval(tick, 300);
+    const onVisible = () => { if (!document.hidden) tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(ref.current); document.removeEventListener('visibilitychange', onVisible); };
   }, [active, paused]);
 
   const meta     = phaseMeta(phase);
@@ -801,9 +893,11 @@ function IntervalTimer() {
       </div>
 
       <div className="int-dots">
-        {Array.from({ length:cfg.rounds }).map((_,i) => (
-          <div key={i} className={`int-dot${i<round-1?' done':i===round-1&&phase!=='warmup'?' active':''}`} />
-        ))}
+        {Array.from({ length:cfg.rounds }).map((_,i) => {
+          const workDone = i < round - 1 || (i === round - 1 && (phase === 'rest' || phase === 'done'));
+          const isCurrent = i === round - 1 && phase !== 'warmup' && !workDone;
+          return <div key={i} className={`int-dot${workDone?' done':isCurrent?' active':''}`} />;
+        })}
       </div>
 
       <div className="int-upnext">
@@ -835,7 +929,7 @@ export default function TimersScreen() {
     <div className="screen timers-page">
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="timer-tabs">
-        {[['rest','⏱ Timer'],['stopwatch','⌚ Stopwatch'],['intervals','⏰ Intervals']].map(([key,label]) => (
+        {[['rest','⌚ Timer'],['stopwatch','⏱ Stopwatch'],['intervals','⏰ Intervals']].map(([key,label]) => (
           <div key={key} className={`timer-tab${tab===key?' active':''}`} onClick={() => setTab(key)}>
             {label}
           </div>
