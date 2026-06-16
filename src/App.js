@@ -5,7 +5,7 @@ import WeekScreen      from './screens/WeekScreen';
 import ProgressScreen  from './screens/ProgressScreen';
 import { HistoryScreen, DetailScreen, AllExercisesScreen } from './screens/HistoryScreen';
 import TimersScreen    from './screens/TimersScreen';
-import { SettingsScreen, NotesScreen } from './screens/OtherScreens';
+import { SettingsScreen, NotesScreen, ExerciseLibraryScreen } from './screens/OtherScreens';
 import DietScreen from './screens/DietScreen';
 
 const NAV = [
@@ -22,6 +22,7 @@ export default function App() {
   const [detailEx,  setDetailEx]  = useState(null);
   const [allExPage, setAllExPage] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showExLib, setShowExLib] = useState(false);
 
   // Lifted up so they survive the Notes screen mount/unmount
   const [noteText,  setNoteText]  = useState('');
@@ -43,9 +44,11 @@ export default function App() {
     setDetailEx(null);
     setAllExPage(false);
     setShowNotes(false);
+    setShowExLib(false);
   }
 
   function renderScreen() {
+    if (showExLib) return <ExerciseLibraryScreen onBack={() => { setShowExLib(false); bumpState(); }} />;
     if (showNotes) return (
       <NotesScreen
         exerciseName={curExIdx}
@@ -82,14 +85,14 @@ export default function App() {
     }
     if (tab === 'timers')   return <TimersScreen />;
     if (tab === 'diet')     return <DietScreen stateVersion={stateVersion} />;
-    if (tab === 'settings') return <SettingsScreen onImport={bumpState} />;
+    if (tab === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} />;
   }
 
   return (
     <div className="app">
       <div className="phone">
         {renderScreen()}
-        {!showNotes && (
+        {!showNotes && !showExLib && (
           <nav className="nav">
             {NAV.map(n => (
               <div key={n.key} className={`nav-tab${tab===n.key?' active':''}`} onClick={() => switchTab(n.key)}>

@@ -102,12 +102,47 @@ export function deleteSet(id) {
 }
 
 export function loadExercises() {
-  try { return JSON.parse(localStorage.getItem(EXER_KEY)) || DEFAULT_EXERCISES; }
-  catch { return DEFAULT_EXERCISES; }
+  try {
+    const stored = JSON.parse(localStorage.getItem(EXER_KEY));
+    if (!stored) return DEFAULT_EXERCISES.map(e => ({ ...e, origin: 'default' }));
+    // Backfill origin for entries saved before origin tagging existed
+    return stored.map(e => e.origin ? e : { ...e, origin: DEFAULT_EXERCISES.some(d => d.name === e.name) ? 'default' : 'coach' });
+  } catch { return DEFAULT_EXERCISES.map(e => ({ ...e, origin: 'default' })); }
 }
 
 export function saveExercises(exs) {
   localStorage.setItem(EXER_KEY, JSON.stringify(exs));
+}
+
+// ── Custom exercise library ─────────────────────────────────────────────────
+// Custom exercises are user-added/edited/deleted only. Default and coach-imported
+// exercises are never exposed for deletion through this API.
+export function addCustomExercise({ name, type }) {
+  const exs = loadExercises();
+  if (exs.some(e => e.name.toLowerCase() === name.toLowerCase())) {
+    throw new Error('An exercise with this name already exists');
+  }
+  const updated = [...exs, { name, type, origin: 'custom' }];
+  saveExercises(updated);
+  return updated;
+}
+
+export function updateCustomExercise(origName, { name, type }) {
+  const exs = loadExercises();
+  const target = exs.find(e => e.name === origName);
+  if (!target || target.origin !== 'custom') throw new Error('Only custom exercises can be edited');
+  const updated = exs.map(e => e.name === origName ? { ...e, name, type } : e);
+  saveExercises(updated);
+  return updated;
+}
+
+export function deleteCustomExercise(name) {
+  const exs = loadExercises();
+  const target = exs.find(e => e.name === name);
+  if (!target || target.origin !== 'custom') throw new Error('Only custom exercises can be deleted');
+  const updated = exs.filter(e => e.name !== name);
+  saveExercises(updated);
+  return updated;
 }
 
 export const FIELD_DEFS = {

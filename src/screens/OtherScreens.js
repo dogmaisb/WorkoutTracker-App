@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { savePrescribed, loadPrescribed, loadExercises, saveExercises, loadSettings, saveSettings } from '../storage';
+import {
+  savePrescribed, loadPrescribed, loadExercises, saveExercises, loadSettings, saveSettings,
+  addCustomExercise, updateCustomExercise, deleteCustomExercise,
+} from '../storage';
 
 const ALL_KEYS = [
   'wt_sets', 'wt_exercises', 'wt_prescribed',
@@ -22,7 +25,7 @@ function exportData() {
   URL.revokeObjectURL(url);
 }
 
-export function SettingsScreen({ onImport }) {
+export function SettingsScreen({ onImport, onOpenExerciseLibrary }) {
   const [importFlash,  setImportFlash]  = useState(null);
   const [backupFlash,  setBackupFlash]  = useState(null);
   const [restoreWarn,  setRestoreWarn]  = useState(false);
@@ -139,7 +142,7 @@ export function SettingsScreen({ onImport }) {
           [...(w.exercises || []), ...(w.circuits || []).flatMap(c => c.exercises || [])].forEach(ex => {
             if (ex.name && !known.has(ex.name.toLowerCase())) {
               known.add(ex.name.toLowerCase());
-              toAdd.push({ name: ex.name, type: ex.type || 'strength' });
+              toAdd.push({ name: ex.name, type: ex.type || 'strength', origin: 'coach' });
             }
           });
         });
@@ -235,6 +238,17 @@ export function SettingsScreen({ onImport }) {
           </label>
         </div>
 
+        <div className="section-label">Exercise Library</div>
+        <div className="card">
+          <div onClick={onOpenExerciseLibrary} style={{ display:'flex', alignItems:'center', gap:10, background:'#162d48', border:'1px solid #1e3a55', borderRadius:9, padding:'11px 14px', cursor:'pointer' }}>
+            <span style={{ fontSize:18 }}>🏋️</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color:'#7dd8ff' }}>Manage Custom Exercises</div>
+              <div style={{ fontSize:11, color:'#4a7a9a', marginTop:2 }}>Add, edit, or remove your own exercises</div>
+            </div>
+          </div>
+        </div>
+
         <div className="section-label">Display</div>
         <div className="card">
           {[
@@ -265,7 +279,7 @@ export function SettingsScreen({ onImport }) {
 
         <div className="section-label">Coming Soon</div>
         <div className="card">
-          {['Custom exercise library','Dark / light theme','Rest timer notifications','Workout templates','Apple Health sync'].map(f => (
+          {['Dark / light theme','Rest timer notifications','Workout templates','Apple Health sync'].map(f => (
             <div key={f} className="coming-item">• {f}</div>
           ))}
         </div>
@@ -292,6 +306,188 @@ export function SettingsScreen({ onImport }) {
                 flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
                 background:'#4a1a6a', border:'1px solid #7a3aaa', color:'#e8d0ff', fontSize:13, fontWeight:700,
               }}>Yes, Restore</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const EX_TYPES = [
+  { key:'strength',   label:'Strength' },
+  { key:'bodyweight', label:'Bodyweight' },
+  { key:'cardio',     label:'Cardio' },
+  { key:'sprint',     label:'Sprint' },
+  { key:'cycling',    label:'Cycling' },
+  { key:'jumprope',   label:'Jump Rope' },
+];
+const ORIGIN_BADGE = {
+  default: { label:'Built-in', color:'#4a7a9a', bg:'#0d1e30' },
+  coach:   { label:'Coach',    color:'#5adb9a', bg:'#0a2e1a' },
+  custom:  { label:'Custom',   color:'#a878f0', bg:'#1a0d2a' },
+};
+
+export function ExerciseLibraryScreen({ onBack }) {
+  const [exercises, setExercises] = useState(() => loadExercises());
+  const [search,    setSearch]    = useState('');
+  const [editing,   setEditing]   = useState(null); // null = closed, {} = new, {name,type} = edit
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [error,     setError]     = useState('');
+
+  const filtered = exercises.filter(e => e.name.toLowerCase().includes(search.toLowerCase()));
+  const customCount = exercises.filter(e => e.origin === 'custom').length;
+
+  function openNew()  { setError(''); setEditing({ name:'', type:'strength' }); }
+  function openEdit(e){ setError(''); setEditing({ origName: e.name, name: e.name, type: e.type }); }
+
+  function handleSave() {
+    const name = editing.name.trim();
+    if (!name) { setError('Name is required'); return; }
+    try {
+      const updated = editing.origName
+        ? updateCustomExercise(editing.origName, { name, type: editing.type })
+        : addCustomExercise({ name, type: editing.type });
+      setExercises(updated);
+      setEditing(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function handleDelete(name) {
+    try {
+      const updated = deleteCustomExercise(name);
+      setExercises(updated);
+    } catch {}
+    setPendingDelete(null);
+  }
+
+  return (
+    <div className="screen week-page">
+      <div className="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div className="top-bar" style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <button className="back-btn" onClick={onBack}>← Back</button>
+        <h1 style={{ margin:0 }}>Exercise Library</h1>
+      </div>
+      <div className="scroll">
+
+        <div className="search-bar">
+          <span style={{ color:'#8bbdd8' }}>🔍</span>
+          <input placeholder="Search exercises..." value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <span style={{ cursor:'pointer', color:'#8bbdd8' }} onClick={() => setSearch('')}>✕</span>}
+        </div>
+
+        <div onClick={openNew} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          background:'#1a0d2a', border:'1px solid #4a2d6a', borderRadius:10, padding:'11px', cursor:'pointer', margin:'4px 0 12px' }}>
+          <span style={{ fontSize:16, color:'#c8a8ff', fontWeight:700 }}>+ Add Custom Exercise</span>
+        </div>
+
+        <div style={{ fontSize:11, color:'#4a7a9a', marginBottom:8, lineHeight:1.5 }}>
+          Built-in and coach-imported exercises are read-only and can't be deleted, so your program and history always stay intact.
+          {customCount > 0 && <> You have <strong style={{ color:'#a878f0' }}>{customCount}</strong> custom exercise{customCount !== 1 ? 's' : ''}.</>}
+        </div>
+
+        <div className="card" style={{ padding:0 }}>
+          {filtered.map((ex, i) => {
+            const badge = ORIGIN_BADGE[ex.origin] || ORIGIN_BADGE.default;
+            const isCustom = ex.origin === 'custom';
+            return (
+              <div key={ex.name} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px',
+                borderBottom: i < filtered.length - 1 ? '1px solid #16283a' : 'none' }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:'#e0f0e0', overflow:'hidden', textOverflow:'ellipsis' }}>{ex.name}</div>
+                  <div style={{ display:'flex', gap:6, marginTop:3, alignItems:'center' }}>
+                    <span style={{ fontSize:9, fontWeight:700, color: badge.color, background: badge.bg,
+                      border:`1px solid ${badge.color}`, borderRadius:5, padding:'1px 6px' }}>{badge.label}</span>
+                    <span style={{ fontSize:10, color:'#4a7a9a' }}>{EX_TYPES.find(t => t.key === ex.type)?.label || ex.type}</span>
+                  </div>
+                </div>
+                {isCustom ? (
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={() => openEdit(ex)} style={{ background:'none', border:'1px solid #1e3a55', borderRadius:7,
+                      color:'#7dd8ff', fontSize:14, padding:'5px 9px', cursor:'pointer' }}>✎</button>
+                    <button onClick={() => setPendingDelete(ex.name)} style={{ background:'none', border:'1px solid #5a1a1a', borderRadius:7,
+                      color:'#e05050', fontSize:14, padding:'5px 9px', cursor:'pointer' }}>🗑</button>
+                  </div>
+                ) : (
+                  <span style={{ fontSize:14, color:'#2a4a5a' }} title="Protected — cannot be edited or deleted">🔒</span>
+                )}
+              </div>
+            );
+          })}
+          {!filtered.length && <div className="empty" style={{ padding:'16px 0' }}>No exercises match your search</div>}
+        </div>
+
+        <div style={{ height:20 }} />
+      </div>
+
+      {/* Add/Edit modal */}
+      {editing && (
+        <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:50, borderRadius:'inherit' }}>
+          <div style={{ background:'#0a1828', border:'1px solid #1e3a55', borderRadius:16,
+            padding:'20px 18px', margin:'0 20px', width:'100%', maxWidth:320 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'#e0f0ff', marginBottom:14 }}>
+              {editing.origName ? 'Edit Exercise' : 'Add Custom Exercise'}
+            </div>
+
+            <div style={{ fontSize:11, color:'#7dd8ff', marginBottom:4 }}>Name</div>
+            <input
+              autoFocus value={editing.name}
+              onChange={e => setEditing(v => ({ ...v, name: e.target.value }))}
+              placeholder="e.g. Bulgarian split squat"
+              style={{ width:'100%', padding:'9px 10px', borderRadius:8, fontSize:13, marginBottom:12,
+                background:'#0e1a2a', border:'1px solid #1e3a55', color:'#e0f0ff', outline:'none', boxSizing:'border-box' }}
+            />
+
+            <div style={{ fontSize:11, color:'#7dd8ff', marginBottom:6 }}>Type</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:14 }}>
+              {EX_TYPES.map(t => (
+                <div key={t.key} onClick={() => setEditing(v => ({ ...v, type: t.key }))}
+                  style={{ padding:'6px 10px', borderRadius:8, fontSize:11, cursor:'pointer', fontWeight:600,
+                    background: editing.type === t.key ? '#0d3a5a' : 'transparent',
+                    border:`1px solid ${editing.type === t.key ? '#1d6e9e' : '#1e3a55'}`,
+                    color: editing.type === t.key ? '#7dd8ff' : '#4a7a9a' }}>{t.label}</div>
+              ))}
+            </div>
+
+            {error && <div style={{ fontSize:11, color:'#e05050', marginBottom:10 }}>{error}</div>}
+
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setEditing(null)} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'transparent', border:'1px solid #1e3a55', color:'#4a7a9a', fontSize:13,
+              }}>Cancel</button>
+              <button onClick={handleSave} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'#0d3a5a', border:'1px solid #1d6e9e', color:'#7dd8ff', fontSize:13, fontWeight:700,
+              }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {pendingDelete && (
+        <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:50, borderRadius:'inherit' }}>
+          <div style={{ background:'#160d20', border:'1px solid #5a1a1a', borderRadius:16,
+            padding:'24px 20px', margin:'0 20px', textAlign:'center' }}>
+            <div style={{ fontSize:32, marginBottom:10 }}>⚠️</div>
+            <div style={{ fontSize:15, fontWeight:700, color:'#e8d0ff', marginBottom:6 }}>Delete "{pendingDelete}"?</div>
+            <div style={{ fontSize:12, color:'#6a4a8a', marginBottom:20, lineHeight:1.6 }}>
+              It'll be removed from the exercise picker. Sets already logged under this name stay in your history.
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setPendingDelete(null)} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'transparent', border:'1px solid #3a1a5a', color:'#9a7abf', fontSize:13,
+              }}>Cancel</button>
+              <button onClick={() => handleDelete(pendingDelete)} style={{
+                flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'#5a1a1a', border:'1px solid #9e1d1d', color:'#ffd0d0', fontSize:13, fontWeight:700,
+              }}>Delete</button>
             </div>
           </div>
         </div>

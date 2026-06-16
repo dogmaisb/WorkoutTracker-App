@@ -162,28 +162,28 @@ function CalorieRing({ total, goal, mealTotals, macros }) {
         {/* ── Corner macro labels ── */}
 
         {/* TOP LEFT — Carbs */}
-        <text x={6} y={38} fontFamily="system-ui,sans-serif" fontSize="10" fontWeight="700">
-          <tspan fill="#f4a261">CARBS (</tspan>{total > 0 && <tspan fill="#ffffff">{Math.round(macros.carbs*4/total*100)}</tspan>}{total > 0 && <tspan fill="#ffffff">%</tspan>}<tspan fill="#f4a261">{total > 0 ? ')' : ''}</tspan>
+        <text x={46} y={38} textAnchor="middle" fontFamily="system-ui,sans-serif" fontSize="10" fontWeight="700">
+          <tspan fill="#f4a261">CARBS{total > 0 ? ' (' : ''}</tspan>{total > 0 && <tspan fill="#ffffff">{Math.round(macros.carbs*4/total*100)}</tspan>}{total > 0 && <tspan fill="#ffffff">%</tspan>}<tspan fill="#f4a261">{total > 0 ? ')' : ''}</tspan>
         </text>
-        <text x={6} y={52} fill="#f0f8ff" fontSize="13" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.carbs}g</text>
+        <text x={46} y={52} textAnchor="middle" fill="#f0f8ff" fontSize="13" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.carbs}g</text>
 
         {/* TOP RIGHT — Protein */}
-        <text x={SIZE-6} y={38} fontFamily="system-ui,sans-serif" fontSize="10" fontWeight="700" textAnchor="end">
+        <text x={SIZE-46} y={38} textAnchor="middle" fontFamily="system-ui,sans-serif" fontSize="10" fontWeight="700">
           <tspan fill="#7dd8ff">PROTEIN{total > 0 ? ' (' : ''}</tspan>{total > 0 && <tspan fill="#ffffff">{Math.round(macros.protein*4/total*100)}</tspan>}{total > 0 && <tspan fill="#ffffff">%</tspan>}<tspan fill="#7dd8ff">{total > 0 ? ')' : ''}</tspan>
         </text>
-        <text x={SIZE-6} y={54} fill="#f0f8ff" fontSize="13" fontWeight="700" fontFamily="system-ui,sans-serif" textAnchor="end">{macros.protein}g</text>
+        <text x={SIZE-46} y={54} textAnchor="middle" fill="#f0f8ff" fontSize="13" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.protein}g</text>
 
         {/* BOTTOM LEFT — Fats */}
-        <text x={6} y={SIZE-54} fontFamily="system-ui,sans-serif" fontSize="10" fontWeight="700">
-          <tspan fill="#ff6b4a">FATS (</tspan>{total > 0 && <tspan fill="#ffffff">{Math.round(macros.fats*9/total*100)}</tspan>}{total > 0 && <tspan fill="#ffffff">%</tspan>}<tspan fill="#ff6b4a">{total > 0 ? ')' : ''}</tspan>
+        <text x={46} y={SIZE-54} textAnchor="middle" fontFamily="system-ui,sans-serif" fontSize="10" fontWeight="700">
+          <tspan fill="#ff6b4a">FATS{total > 0 ? ' (' : ''}</tspan>{total > 0 && <tspan fill="#ffffff">{Math.round(macros.fats*9/total*100)}</tspan>}{total > 0 && <tspan fill="#ffffff">%</tspan>}<tspan fill="#ff6b4a">{total > 0 ? ')' : ''}</tspan>
         </text>
-        <text x={6} y={SIZE-40} fill="#f0f8ff" fontSize="13" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.fats}g</text>
+        <text x={46} y={SIZE-40} textAnchor="middle" fill="#f0f8ff" fontSize="13" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.fats}g</text>
 
         {/* BOTTOM RIGHT — Chol & Sodium stacked */}
-        <text x={SIZE-6} y={SIZE-54} fill="#a78bfa" fontSize="10" fontWeight="700" fontFamily="system-ui,sans-serif" textAnchor="end">CHOL</text>
-        <text x={SIZE-6} y={SIZE-40} fill="#f0f8ff" fontSize="12" fontWeight="700" fontFamily="system-ui,sans-serif" textAnchor="end">{macros.chol}mg</text>
-        <text x={SIZE-6} y={SIZE-26} fill="#7dff4f" fontSize="10" fontWeight="700" fontFamily="system-ui,sans-serif" textAnchor="end">SODIUM</text>
-        <text x={SIZE-6} y={SIZE-12} fill="#f0f8ff" fontSize="12" fontWeight="700" fontFamily="system-ui,sans-serif" textAnchor="end">{macros.sodium}mg</text>
+        <text x={SIZE-46} y={SIZE-54} textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="700" fontFamily="system-ui,sans-serif">CHOL</text>
+        <text x={SIZE-46} y={SIZE-40} textAnchor="middle" fill="#f0f8ff" fontSize="12" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.chol}mg</text>
+        <text x={SIZE-46} y={SIZE-26} textAnchor="middle" fill="#7dff4f" fontSize="10" fontWeight="700" fontFamily="system-ui,sans-serif">SODIUM</text>
+        <text x={SIZE-46} y={SIZE-12} textAnchor="middle" fill="#f0f8ff" fontSize="12" fontWeight="700" fontFamily="system-ui,sans-serif">{macros.sodium}mg</text>
 
       </svg>
 
