@@ -4,10 +4,12 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { loadSets, METRIC_DEFS, METRIC_LABELS, calcSetVolume, loadSettings } from '../storage';
+import { useTheme } from '../ThemeContext';
 
 const ITEM_H = 18;
 
 function RepWheel({ items, value, onChange }) {
+  const { theme } = useTheme();
   const idx       = Math.max(0, items.indexOf(value));
   const offsetRef = useRef(idx * ITEM_H);
   const [offset, setOffset] = useState(idx * ITEM_H);
@@ -106,7 +108,7 @@ function RepWheel({ items, value, onChange }) {
             position:'absolute', left:0, right:0, top, height: ITEM_H,
             display:'flex', alignItems:'center', justifyContent:'center',
             fontSize:11, fontWeight: dist < 0.5 ? 700 : 500,
-            color: dist < 0.5 ? '#00ff88' : '#4a7a9a',
+            color: dist < 0.5 ? theme.accentGreenBright : theme.textMuted,
             opacity: Math.max(0, 1 - dist * 0.6),
             transform: `scale(${Math.max(0.7, 1 - dist * 0.15)})`,
           }}>
@@ -130,6 +132,7 @@ function toMetres(val, unit) {
 
 // Tooltip that appends the unit to each value
 function UnitTooltip({ unit, ...props }) {
+  const { theme } = useTheme();
   const { active, payload, label } = props;
   if (!active || !payload?.length) return null;
   const p = payload[0];
@@ -137,14 +140,15 @@ function UnitTooltip({ unit, ...props }) {
   const wu = p.payload?.weightUnit || 'lb';
   const display = w ? `${p.value} reps @ ${w}${wu}` : `${p.value}${unit ? ' ' + unit : ''}`;
   return (
-    <div style={{ background:'#0d1e30', border:'1px solid #1e5080', borderRadius:8, padding:'6px 10px', fontSize:12, color:'#f0f8ff' }}>
-      <div style={{ color:'#4a7a9a', marginBottom:2 }}>{label}</div>
-      <div style={{ fontWeight:700, color:'#7dd8ff' }}>{display}</div>
+    <div style={{ background:theme.graphTooltipBg, border:`1px solid ${theme.graphTooltipBorder}`, borderRadius:8, padding:'6px 10px', fontSize:12, color:theme.textPrimary }}>
+      <div style={{ color:theme.textMuted, marginBottom:2 }}>{label}</div>
+      <div style={{ fontWeight:700, color:theme.accentBlueLight }}>{display}</div>
     </div>
   );
 }
 
 function ChartBlock({ data, color, yReversed, unit, height=120 }) {
+  const { theme } = useTheme();
   if (data.length < 2) return (
     <div className="empty" style={{ padding:'10px 0' }}>Log at least 2 entries to see chart</div>
   );
@@ -158,14 +162,14 @@ function ChartBlock({ data, color, yReversed, unit, height=120 }) {
             <stop offset="95%" stopColor={color} stopOpacity={0.02}/>
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="rgba(74,154,220,0.12)" strokeDasharray="3 3" />
-        <XAxis dataKey="date" tick={{ fill:'#4a7a9a', fontSize:9 }} tickLine={false} axisLine={{ stroke:'#1e3a55' }} />
-        <YAxis tick={{ fill:'#4a7a9a', fontSize:9 }} tickLine={false} axisLine={{ stroke:'#1e3a55' }} reversed={!!yReversed} />
+        <CartesianGrid stroke={theme.graphGrid} strokeDasharray="3 3" />
+        <XAxis dataKey="date" tick={{ fill:theme.graphAxisTick, fontSize:9 }} tickLine={false} axisLine={{ stroke:theme.graphAxis }} />
+        <YAxis tick={{ fill:theme.graphAxisTick, fontSize:9 }} tickLine={false} axisLine={{ stroke:theme.graphAxis }} reversed={!!yReversed} />
         <Tooltip content={<UnitTooltip unit={unit||''} />} />
         <Area type="monotone" dataKey="val" stroke={color} strokeWidth={2.5}
           fill={`url(#${gradId})`}
-          dot={{ fill: color, r:4, stroke:'#071624', strokeWidth:1.5 }}
-          activeDot={{ r:6, stroke: color, strokeWidth:2, fill:'#071624' }} />
+          dot={{ fill: color, r:4, stroke:theme.graphDotStroke, strokeWidth:1.5 }}
+          activeDot={{ r:6, stroke: color, strokeWidth:2, fill:theme.graphDotStroke }} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -180,6 +184,7 @@ function mondayKey(d) { return getMonday(d).toISOString().slice(0, 10); }
 function toMMMd(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 
 function WeekCalendar({ sets, selWeek, onSelect, onClose }) {
+  const { theme } = useTheme();
   const [calMonth, setCalMonth] = useState(() => {
     if (selWeek) {
       const d = new Date(selWeek + 'T00:00:00');
@@ -222,24 +227,24 @@ function WeekCalendar({ sets, selWeek, onSelect, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.82)', zIndex:200,
       display:'flex', alignItems:'center', justifyContent:'center' }} onClick={onClose}>
-      <div style={{ background:'#0a1828', border:'1px solid #1e3a55', borderRadius:18,
+      <div style={{ background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:18,
         padding:'16px 14px', width:290, maxWidth:'92vw' }} onClick={e => e.stopPropagation()}>
 
         {/* Month nav */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
           <button onClick={() => setCalMonth(new Date(year, month - 1, 1))}
-            style={{ background:'none', border:'none', color:'#7dd8ff', fontSize:18, cursor:'pointer', padding:'2px 8px' }}>‹</button>
-          <div style={{ fontSize:13, fontWeight:700, color:'#e0f0ff' }}>
+            style={{ background:'none', border:'none', color:theme.accentBlueLight, fontSize:18, cursor:'pointer', padding:'2px 8px' }}>‹</button>
+          <div style={{ fontSize:13, fontWeight:700, color:theme.textPrimary }}>
             {calMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </div>
           <button onClick={() => setCalMonth(new Date(year, month + 1, 1))}
-            style={{ background:'none', border:'none', color:'#7dd8ff', fontSize:18, cursor:'pointer', padding:'2px 8px' }}>›</button>
+            style={{ background:'none', border:'none', color:theme.accentBlueLight, fontSize:18, cursor:'pointer', padding:'2px 8px' }}>›</button>
         </div>
 
         {/* Day-of-week headers */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', marginBottom:4 }}>
           {['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => (
-            <div key={d} style={{ textAlign:'center', fontSize:9, color:'#2a5a7a', fontWeight:700 }}>{d}</div>
+            <div key={d} style={{ textAlign:'center', fontSize:9, color:theme.textMuted, fontWeight:700 }}>{d}</div>
           ))}
         </div>
 
@@ -264,11 +269,11 @@ function WeekCalendar({ sets, selWeek, onSelect, onClose }) {
                   <div key={di} style={{ textAlign:'center', padding:'3px 0' }}>
                     <div style={{
                       fontSize:11, fontWeight: inMonth ? 600 : 400,
-                      color: isSel ? '#00ff88' : inMonth ? '#c0d8f0' : '#1e3a55',
+                      color: isSel ? theme.accentGreenBright : inMonth ? theme.dayNum : theme.borderDefault,
                     }}>{d.getDate()}</div>
                     <div style={{
                       width: 4, height: 4, borderRadius:'50%', margin:'1px auto 0',
-                      background: hasVol ? '#00ff88' : 'transparent',
+                      background: hasVol ? theme.accentGreenBright : 'transparent',
                     }} />
                   </div>
                 );
@@ -278,15 +283,16 @@ function WeekCalendar({ sets, selWeek, onSelect, onClose }) {
         })}
 
         <button onClick={onClose} style={{
-          width:'100%', marginTop:10, background:'transparent', border:'1px solid #1e3a55',
-          borderRadius:9, padding:'9px', color:'#4a7a9a', fontSize:12, cursor:'pointer',
+          width:'100%', marginTop:10, background:'transparent', border:`1px solid ${theme.borderDefault}`,
+          borderRadius:9, padding:'9px', color:theme.textMuted, fontSize:12, cursor:'pointer',
         }}>Cancel</button>
       </div>
     </div>
   );
 }
 
-export default function ProgressScreen({ stateVersion }) {
+export default function ProgressScreen({ stateVersion, weightUnit: globalWeightUnit = 'lb', setWeightUnit: setGlobalWeightUnit }) {
+  const { theme } = useTheme();
   const [sets,      setSets]      = useState([]);
   const [search,    setSearch]    = useState('');
   const [selEx,     setSelEx]     = useState('Bench press');
@@ -308,16 +314,25 @@ export default function ProgressScreen({ stateVersion }) {
     try { return JSON.parse(localStorage.getItem('wt_diet_v1'))?.history || {}; } catch { return {}; }
   });
 
-  function saveBwEntry(val) {
+  const [bwConfirmVal, setBwConfirmVal] = useState(null);
+
+  function saveBwEntry(val, force = false) {
     const key = new Date().toISOString().slice(0,10);
     const ts  = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-    const next = { ...dietHistory, [key]: { ...(dietHistory[key] || {}), weight: val, weightUnit: 'lb', weightTime: ts } };
+    const existing = dietHistory[key];
+    if (existing?.weight && !force) { setBwConfirmVal(val); return; }
+    const unit = globalWeightUnit || 'lb';
+    const dayData = existing?.weight && force
+      ? { ...existing, weightEntries: [...(existing.weightEntries || [{ val: existing.weight, unit: existing.weightUnit || 'lb', time: existing.weightTime }]), { val, unit, time: ts }] }
+      : { ...(existing || {}), weight: val, weightUnit: unit, weightTime: ts };
+    const next = { ...dietHistory, [key]: dayData };
     setDietHistory(next);
     try {
       const stored = JSON.parse(localStorage.getItem('wt_diet_v1')) || {};
       localStorage.setItem('wt_diet_v1', JSON.stringify({ ...stored, history: next }));
     } catch {}
     setBwDraft('');
+    setBwConfirmVal(null);
   }
 
   const bwChartData = (() => {
@@ -555,9 +570,9 @@ export default function ProgressScreen({ stateVersion }) {
 
         {/* Search */}
         <div className="search-bar">
-          <span style={{ color:'#8bbdd8' }}>🔍</span>
+          <span style={{ color:theme.textSecondary }}>🔍</span>
           <input placeholder="Search exercises..." value={search} onChange={e => setSearch(e.target.value)} />
-          {search && <span style={{ cursor:'pointer', color:'#8bbdd8' }} onClick={() => setSearch('')}>✕</span>}
+          {search && <span style={{ cursor:'pointer', color:theme.textSecondary }} onClick={() => setSearch('')}>✕</span>}
         </div>
 
         {/* Exercise chips */}
@@ -615,7 +630,7 @@ export default function ProgressScreen({ stateVersion }) {
                 ? `${activeEx} · ${METRIC_LABELS[activeMet]||activeMet}`
                 : 'Log more sets to see chart'}
             </div>
-            <ChartBlock data={genData} color="#00ff88" unit={unitLabel} height={130} />
+            <ChartBlock data={genData} color={theme.graphStroke} unit={unitLabel} height={130} />
           </div>
 
           {/* Set history list — collapsible */}
@@ -634,8 +649,8 @@ export default function ProgressScreen({ stateVersion }) {
                 >
                   <div className="section-label" style={{ margin:0 }}>Set History</div>
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                    <span style={{ fontSize:10, color:'#4a7a9a' }}>{exSets.length} sets</span>
-                    <span style={{ fontSize:13, color:'#4a7a9a', transition:'transform .2s', display:'inline-block', transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                    <span style={{ fontSize:10, color:theme.textMuted }}>{exSets.length} sets</span>
+                    <span style={{ fontSize:13, color:theme.textMuted, transition:'transform .2s', display:'inline-block', transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
                   </div>
                 </div>
                 {historyOpen && exSets.map((s, i) => {
@@ -649,18 +664,18 @@ export default function ProgressScreen({ stateVersion }) {
                   return (
                     <div key={s.id || i} style={{
                       display:'flex', justifyContent:'space-between', alignItems:'center',
-                      background:'#0d1e30', border:'1px solid #1e3a55', borderRadius:9,
+                      background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:9,
                       padding:'9px 14px', marginBottom:6,
                     }}>
                       <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
-                        {w && <span style={{ fontSize:13, fontWeight:700, color:'#f0f8ff' }}>{w} <span style={{ color:'#4a7a9a', fontSize:11 }}>{wu}</span></span>}
-                        {reps && <span style={{ fontSize:12, color:'#8bbdd8' }}>× {reps} reps</span>}
-                        {dist && !reps && <span style={{ fontSize:12, color:'#8bbdd8' }}>{dist} {du}</span>}
-                        {dur  && !reps && <span style={{ fontSize:12, color:'#8bbdd8' }}>{dur} min</span>}
-                        {!w && !reps && !dist && !dur && <span style={{ fontSize:12, color:'#4a7a9a' }}>—</span>}
+                        {w && <span style={{ fontSize:13, fontWeight:700, color:theme.textPrimary }}>{w} <span style={{ color:theme.textMuted, fontSize:11 }}>{wu}</span></span>}
+                        {reps && <span style={{ fontSize:12, color:theme.textSecondary }}>× {reps} reps</span>}
+                        {dist && !reps && <span style={{ fontSize:12, color:theme.textSecondary }}>{dist} {du}</span>}
+                        {dur  && !reps && <span style={{ fontSize:12, color:theme.textSecondary }}>{dur} min</span>}
+                        {!w && !reps && !dist && !dur && <span style={{ fontSize:12, color:theme.textMuted }}>—</span>}
                         {vol > 0 && <span style={{ fontSize:10, color:'rgba(0,255,136,0.6)', background:'rgba(0,255,136,0.06)', border:'1px solid rgba(0,255,136,0.18)', borderRadius:5, padding:'1px 5px' }}>{vol.toLocaleString()} lb</span>}
                       </div>
-                      <span style={{ fontSize:10, color:'#4a7a9a' }}>{s.date}{s.time ? ' · ' + s.time : ''}</span>
+                      <span style={{ fontSize:10, color:theme.textMuted }}>{s.date}{s.time ? ' · ' + s.time : ''}</span>
                     </div>
                   );
                 })}
@@ -687,7 +702,7 @@ export default function ProgressScreen({ stateVersion }) {
           {/* Unit filter chips — only show if more than one unit used */}
           {usedDistUnits.length > 1 && (
             <div style={{ marginBottom:8 }}>
-              <div style={{ fontSize:10, color:'#8bbdd8', marginBottom:5 }}>Filter by unit:</div>
+              <div style={{ fontSize:10, color:theme.textSecondary, marginBottom:5 }}>Filter by unit:</div>
               <div className="chip-row">
                 <div className={`chip${distFilter==='all'?' active':''}`} onClick={() => setDistFilter('all')}>
                   All
@@ -715,12 +730,12 @@ export default function ProgressScreen({ stateVersion }) {
             </div>
             <ChartBlock
               data={distChartData}
-              color="#00ff88"
+              color={theme.graphStroke}
               unit={distFilter !== 'all' ? distFilter : ''}
               height={120}
             />
             {activeDistUnit === 'mixed units' && distChartData.length >= 2 && (
-              <div style={{ fontSize:10, color:'#4db8ff', marginTop:6 }}>
+              <div style={{ fontSize:10, color:theme.accentBlueSky, marginTop:6 }}>
                 ⚠ Chart contains mixed units — use the filter chips above to compare runs in the same unit
               </div>
             )}
@@ -731,7 +746,7 @@ export default function ProgressScreen({ stateVersion }) {
           <div className="section-label">Sprint &amp; Timed Runs</div>
 
           {sprintGroupList.length === 0 ? (
-            <div style={{ fontSize:12, color:'#4a7a9a', marginBottom:10 }}>
+            <div style={{ fontSize:12, color:theme.textMuted, marginBottom:10 }}>
               No sprints logged yet — switch to Sprint / Timed mode on the Week tab to log one
             </div>
           ) : (
@@ -762,11 +777,11 @@ export default function ProgressScreen({ stateVersion }) {
             <div className="chart-card">
               <div className="chart-title">{selGroup.label} · time (sec) — lower is faster ↓</div>
               <div className="stat-row" style={{ marginBottom:8 }}>
-                <div className="stat-box"><div className="val" style={{ color:'#5adb9a' }}>{sprintBest}</div><div className="lbl">Best</div></div>
-                <div className="stat-box"><div className="val" style={{ color:'#5adb9a' }}>{sprintAvg}</div><div className="lbl">Avg</div></div>
-                <div className="stat-box"><div className="val" style={{ color:'#5adb9a' }}>{selGroup.sets.length}</div><div className="lbl">Runs</div></div>
+                <div className="stat-box"><div className="val" style={{ color:theme.accentGreen }}>{sprintBest}</div><div className="lbl">Best</div></div>
+                <div className="stat-box"><div className="val" style={{ color:theme.accentGreen }}>{sprintAvg}</div><div className="lbl">Avg</div></div>
+                <div className="stat-box"><div className="val" style={{ color:theme.accentGreen }}>{selGroup.sets.length}</div><div className="lbl">Runs</div></div>
               </div>
-              <ChartBlock data={sprintPts} color="#00ff88" yReversed unit="sec" height={110} />
+              <ChartBlock data={sprintPts} color={theme.graphStroke} yReversed unit="sec" height={110} />
             </div>
           )}
 
@@ -785,7 +800,7 @@ export default function ProgressScreen({ stateVersion }) {
               onMouseOver={e => e.currentTarget.style.background='rgba(0,255,136,0.10)'}
               onMouseOut={e  => e.currentTarget.style.background='rgba(0,255,136,0.04)'}
             >
-              <div className="val" style={{ color:'#00ff88' }}>{weeklyVolumeData.length}</div>
+              <div className="val" style={{ color:theme.accentGreenBright }}>{weeklyVolumeData.length}</div>
               <div className="lbl" style={{ color:'rgba(0,255,136,0.7)' }}>Weeks ▾</div>
             </div>
           </div>
@@ -795,17 +810,17 @@ export default function ProgressScreen({ stateVersion }) {
             <div className="chart-card">
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
                 <div className="chart-title" style={{ marginBottom:0 }}>{selWeekLabel} · Daily Volume</div>
-                <div style={{ fontSize:11, fontWeight:700, color:'#00ff88' }}>{selWeekTotal.toLocaleString()} lb total</div>
+                <div style={{ fontSize:11, fontWeight:700, color:theme.accentGreenBright }}>{selWeekTotal.toLocaleString()} lb total</div>
               </div>
               {selWeekTotal > 0
-                ? <ChartBlock data={selectedWeekDailyData} color="#00ff88" unit="lb" height={120} />
+                ? <ChartBlock data={selectedWeekDailyData} color={theme.graphStroke} unit="lb" height={120} />
                 : <div className="empty" style={{ padding:'14px 0' }}>No volume logged this week</div>}
-              <div style={{ fontSize:10, color:'#2a5a7a', textAlign:'center', marginTop:4, cursor:'pointer' }}
+              <div style={{ fontSize:10, color:theme.textMuted, textAlign:'center', marginTop:4, cursor:'pointer' }}
                 onClick={() => setWeekPickerOpen(true)}>Tap Weeks ▾ to change week</div>
             </div>
           ) : (
-            <div style={{ fontSize:12, color:'#2a5a7a', textAlign:'center', padding:'12px 0 4px' }}>
-              Tap <span style={{ color:'#00ff88' }}>Weeks ▾</span> to pick a week and see its daily breakdown
+            <div style={{ fontSize:12, color:theme.textMuted, textAlign:'center', padding:'12px 0 4px' }}>
+              Tap <span style={{ color:theme.accentGreenBright }}>Weeks ▾</span> to pick a week and see its daily breakdown
             </div>
           )}
         </>)}
@@ -837,7 +852,7 @@ export default function ProgressScreen({ stateVersion }) {
                 <div className="lbl">Low (30d)</div>
               </div>
               <div className="stat-box">
-                <div className="val" style={{ color: bwChange > 0 ? '#ff6b4a' : bwChange < 0 ? '#00ff88' : '#e0f0e0' }}>
+                <div className="val" style={{ color: bwChange > 0 ? theme.accentOrange : bwChange < 0 ? theme.accentGreenBright : theme.textHeading }}>
                   {bwChange !== null ? (bwChange > 0 ? '+' : '') + bwChange + ' lb' : '—'}
                 </div>
                 <div className="lbl">Change</div>
@@ -853,20 +868,20 @@ export default function ProgressScreen({ stateVersion }) {
                 <AreaChart data={bwChartData} margin={{ top:8, right:4, left:0, bottom:0 }}>
                   <defs>
                     <linearGradient id="bwGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#7dd8ff" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#7dd8ff" stopOpacity={0.03} />
+                      <stop offset="5%"  stopColor={theme.graphFill} stopOpacity={0.35} />
+                      <stop offset="95%" stopColor={theme.graphFill} stopOpacity={0.03} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                  <XAxis dataKey="date" tick={{ fill:'#2a5a7a', fontSize:9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                  <YAxis domain={[bwMin - 2, bwMax + 2]} tick={{ fill:'#2a5a7a', fontSize:9 }} tickLine={false} axisLine={false} width={28} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.graphBwGrid} />
+                  <XAxis dataKey="date" tick={{ fill:theme.graphBwTick, fontSize:9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                  <YAxis domain={[bwMin - 2, bwMax + 2]} tick={{ fill:theme.graphBwTick, fontSize:9 }} tickLine={false} axisLine={false} width={28} />
                   <Tooltip
-                    contentStyle={{ background:'#0a1828', border:'1px solid #1e3a55', borderRadius:8, fontSize:11 }}
-                    labelStyle={{ color:'#7dd8ff' }}
-                    itemStyle={{ color:'#e0f0ff' }}
+                    contentStyle={{ background:theme.modalBg, border:`1px solid ${theme.borderDefault}`, borderRadius:8, fontSize:11 }}
+                    labelStyle={{ color:theme.graphStroke }}
+                    itemStyle={{ color:theme.textHeadingAlt }}
                     formatter={v => [v + ' lb', 'Weight']}
                   />
-                  <Area type="monotone" dataKey="val" stroke="#7dd8ff" strokeWidth={2} fill="url(#bwGrad)" dot={{ fill:'#7dd8ff', r:3 }} connectNulls />
+                  <Area type="monotone" dataKey="val" stroke={theme.graphStroke} strokeWidth={2} fill="url(#bwGrad)" dot={{ fill:theme.graphDot, r:3 }} connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -877,22 +892,53 @@ export default function ProgressScreen({ stateVersion }) {
           )}
 
           {/* Quick-log today's weight */}
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'#0e1a2a', border:'1px solid #1e3a55', borderRadius:10, padding:'8px 12px', marginTop:6 }}>
-            <span style={{ fontSize:11, color:'#4a7a9a', flex:1 }}>Log today's weight</span>
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:10, padding:'8px 12px', marginTop:6 }}>
+            <span style={{ fontSize:11, color:theme.textMuted, flex:1 }}>
+              Today's weight:
+              {(() => {
+                const todayEntry = dietHistory[new Date().toISOString().slice(0,10)];
+                if (!todayEntry?.weight) return null;
+                return (
+                  <span style={{ display:'block', fontSize:10, color:theme.accentGreenBright, marginTop:2 }}>
+                    ✓ {todayEntry.weight} {todayEntry.weightUnit || 'lb'} @ {todayEntry.weightTime || '—'}
+                  </span>
+                );
+              })()}
+            </span>
             <input
-              type="number" placeholder="lbs" step="0.1"
+              type="number" placeholder={globalWeightUnit === 'kg' ? 'kg' : 'lbs'} step="0.1"
               value={bwDraft}
               onChange={e => setBwDraft(e.target.value)}
               style={{ width:64, padding:'5px 8px', borderRadius:7, fontSize:13,
-                background:'#0a1828', border:'1px solid #1e3a55', color:'#7dd8ff', outline:'none', textAlign:'right' }}
+                background:theme.bgCardAlt, border:'1px solid rgba(0,255,136,0.3)', color:theme.accentGreenBright, outline:'none', textAlign:'right' }}
             />
+            <button onClick={() => setGlobalWeightUnit && setGlobalWeightUnit(globalWeightUnit === 'lb' ? 'kg' : 'lb')}
+              style={{ background:'rgba(0,255,136,0.08)', border:'1px solid rgba(0,255,136,0.25)', borderRadius:7, padding:'5px 8px', fontSize:11, fontWeight:700, color:theme.accentGreenBright, cursor:'pointer', minWidth:34 }}>
+              {globalWeightUnit === 'kg' ? 'KG' : 'LB'}
+            </button>
             <button onClick={() => { const v = parseFloat(bwDraft); if (v) saveBwEntry(v); }}
-              style={{ background: bwDraft ? '#0d3a5a' : 'transparent', border:`1px solid ${bwDraft?'#1d6e9e':'#1e3a55'}`,
-                borderRadius:7, padding:'5px 10px', fontSize:12, color: bwDraft ? '#7dd8ff' : '#2a5a7a',
-                cursor: bwDraft ? 'pointer' : 'default', fontWeight:700, transition:'all .15s' }}>
-              Save
+              style={{ background: bwDraft ? 'rgba(0,255,136,0.12)' : 'transparent', border:`1px solid ${bwDraft?'rgba(0,255,136,0.5)':'rgba(0,255,136,0.15)'}`,
+                borderRadius:7, padding:'5px 10px', fontSize:18, color: bwDraft ? theme.accentGreenBright : 'rgba(0,255,136,0.3)',
+                cursor: bwDraft ? 'pointer' : 'default', transition:'all .15s', lineHeight:1 }}>
+              💾
             </button>
           </div>
+
+          {/* Duplicate weight confirmation modal */}
+          {bwConfirmVal !== null && (
+            <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:14, padding:'20px 22px', width:280, textAlign:'center' }}>
+                <div style={{ fontSize:15, fontWeight:700, color:theme.textPrimary, marginBottom:8 }}>Already logged today</div>
+                <div style={{ fontSize:12, color:theme.textMuted, marginBottom:18 }}>
+                  You already logged <strong style={{ color:theme.accentBlueLight }}>{dietHistory[new Date().toISOString().slice(0,10)]?.weight} lb</strong> today. Log <strong style={{ color:theme.accentBlueLight }}>{bwConfirmVal} lb</strong> as a second entry?
+                </div>
+                <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+                  <button onClick={() => setBwConfirmVal(null)} style={{ flex:1, padding:'8px 0', borderRadius:8, border:`1px solid ${theme.borderDefault}`, background:'transparent', color:theme.textMuted, fontSize:13, cursor:'pointer' }}>Cancel</button>
+                  <button onClick={() => saveBwEntry(bwConfirmVal, true)} style={{ flex:1, padding:'8px 0', borderRadius:8, border:`1px solid ${theme.accentBlueDeep}`, background:theme.accentBlueDeep, color:theme.accentBlueLight, fontSize:13, fontWeight:700, cursor:'pointer' }}>Log Again</button>
+                </div>
+              </div>
+            </div>
+          )}
         </>)}
 
         <div style={{ height:20 }} />

@@ -2,6 +2,7 @@ import { useBackground } from '../useBackground';
 import React, { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { loadSets, addSet, updateSet, deleteSet, FIELD_DEFS, setMainValue, getPrescribedForDate, loadExercises } from '../storage';
+import { useTheme } from '../ThemeContext';
 
 const REST_QUOTES = [
   { quote: "Champions are built in the off days.", author: "Unknown" },
@@ -130,6 +131,7 @@ function restDoubleBeep(longer = false) {
 // - Inline Rest Timer -
 function RestTimerField({ defaultDur, onChange }) {
   const fmtMSS = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+  const { theme } = useTheme();
 
   const [duration, setDuration] = useState(defaultDur);
   const [remain,   setRemain]   = useState(defaultDur);
@@ -180,19 +182,19 @@ function RestTimerField({ defaultDur, onChange }) {
   }, [running]);
 
   const pct         = duration > 0 ? remain / duration : 1;
-  const timeColor   = done ? '#5adb9a' : (running && pct <= 0.25) ? '#cc4444' : running ? '#ff6b4a' : '#e0f0e0';
-  const borderColor = done ? '#1d9e75' : running ? '#ff6b4a' : '#1e3a55';
+  const timeColor   = done ? theme.accentGreen : (running && pct <= 0.25) ? '#cc4444' : running ? theme.accentOrange : '#e0f0e0';
+  const borderColor = done ? theme.accentGreenDark : running ? theme.accentOrange : theme.borderDefault;
 
   const btnStyle = (active) => ({
-    width:18, height:18, borderRadius:4, border:'1px solid #1e3a55', flexShrink:0,
-    background: active ? '#0d1e30' : '#1e3a55',
-    color: active ? '#4a7a9a' : '#8bbdd8',
+    width:18, height:18, borderRadius:4, border:`1px solid ${theme.borderDefault}`, flexShrink:0,
+    background: active ? theme.bgCardAlt : theme.borderDefault,
+    color: active ? theme.textMuted : theme.textSecondary,
     fontSize:12, fontWeight:700, lineHeight:1, cursor: active ? 'default' : 'pointer',
     display:'flex', alignItems:'center', justifyContent:'center',
   });
 
   return (
-    <div style={{ background:'#0d1e30', border:`1px solid ${borderColor}`, borderRadius:7, padding:'3px 5px', transition:'border-color .2s' }}>
+    <div style={{ background:theme.bgCardAlt, border:`1px solid ${borderColor}`, borderRadius:7, padding:'3px 5px', transition:'border-color .2s' }}>
       {/*   editable time / countdown  + */}
       <div style={{ display:'flex', alignItems:'center', gap:3, marginBottom:3 }}>
         <button onClick={() => setDur(duration - 15)} disabled={running} style={btnStyle(running)}>−</button>
@@ -213,9 +215,9 @@ function RestTimerField({ defaultDur, onChange }) {
           onClick={toggle}
           style={{
             flex:1, padding:'2px 0', borderRadius:5,
-            background: done ? '#0d3520' : running ? '#2a1800' : '#1e3a55',
-            border: `1px solid ${done ? '#1d9e75' : running ? '#ff6b4a' : '#4a9adc'}`,
-            color: done ? '#5adb9a' : running ? '#ff6b4a' : '#8bbdd8',
+            background: done ? theme.accentGreenDeep : running ? `rgba(255,107,74,0.1)` : theme.borderDefault,
+            border: `1px solid ${done ? theme.accentGreenDark : running ? theme.accentOrange : theme.accentBlue}`,
+            color: done ? theme.accentGreen : running ? theme.accentOrange : theme.textSecondary,
             fontSize:10, fontWeight:700, cursor:'pointer', transition:'all .15s',
           }}
         >
@@ -226,8 +228,8 @@ function RestTimerField({ defaultDur, onChange }) {
             onClick={reset}
             style={{
               width:22, borderRadius:5, lineHeight:1,
-              background:'#1e3a55', border:'1px solid #2d4a6a',
-              color:'#8bbdd8', fontSize:11, cursor:'pointer',
+              background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`,
+              color:theme.textSecondary, fontSize:11, cursor:'pointer',
             }}
           >↺</button>
         )}
@@ -245,6 +247,7 @@ export default function WeekScreen({
   weightUnit, setWeightUnit,
   stateVersion,
 }) {
+  const { theme } = useTheme();
   const bgStyle = useBackground("week");
 
   const [sets,         setSets]         = useState(loadSets());
@@ -494,7 +497,7 @@ export default function WeekScreen({
             return (
               <div style={{ marginBottom:10 }}>
                 <div style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
-                  <div style={{ fontSize:20, fontWeight:700, color:'#f0f8ff' }}>{curEx.name}</div>
+                  <div style={{ fontSize:20, fontWeight:700, color:theme.textPrimary }}>{curEx.name}</div>
                   {showVol && (
                     <div style={{
                       fontSize:11, fontWeight:700, color:'#00ff88',
@@ -505,28 +508,28 @@ export default function WeekScreen({
                     </div>
                   )}
                 </div>
-                <div style={{ fontSize:11, color:'#8bbdd8', marginTop:2 }}>{curEx.type.charAt(0).toUpperCase()+curEx.type.slice(1)}</div>
+                <div style={{ fontSize:11, color:theme.textSecondary, marginTop:2 }}>{curEx.type.charAt(0).toUpperCase()+curEx.type.slice(1)}</div>
               </div>
             );
           })()}
 
           {/* Prescribed target */}
           {presEx && (
-            <div style={{ background:'#162d48', border:'1px solid #1e3a55', borderRadius:9, padding:'9px 14px', marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <div style={{ fontSize:11, color:'#8bbdd8' }}>Prescribed</div>
-              <div style={{ fontSize:14, fontWeight:700, color:'#5adb9a' }}>
+            <div style={{ background:theme.bgSurface, border:`1px solid ${theme.borderDefault}`, borderRadius:9, padding:'9px 14px', marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div style={{ fontSize:11, color:theme.textSecondary }}>Prescribed</div>
+              <div style={{ fontSize:14, fontWeight:700, color:theme.accentGreen }}>
                 {(() => {
                   const target = parseInt(presEx.sets) || 0;
                   const done   = todaySets.length;
                   const left   = Math.max(0, target - done);
                   const full   = `${target} sets × ${presEx.reps || '—'} reps`;
                   if (left === 0 && done > 0) {
-                    return <span style={{ textDecoration:'line-through', color:'#3a7a5a' }}>{full}</span>;
+                    return <span style={{ textDecoration:'line-through', color:theme.prescribedDone }}>{full}</span>;
                   }
                   return (
                     <>
                       {done > 0 ? (
-                        <><span style={{ textDecoration:'line-through', color:'#3a7a5a', marginRight:5 }}>{target}</span><span style={{ color:'#5adb9a' }}>{left}</span></>
+                        <><span style={{ textDecoration:'line-through', color:theme.prescribedDone, marginRight:5 }}>{target}</span><span style={{ color:theme.accentGreen }}>{left}</span></>
                       ) : (
                         <span>{target}</span>
                       )}
@@ -553,7 +556,7 @@ export default function WeekScreen({
                       </span>
                     )}
                     {left === 0 && (
-                      <span style={{ fontSize:11, fontWeight:700, color:'#4adbaa', background:'rgba(74,219,170,0.12)', border:'1px solid rgba(74,219,170,0.35)', borderRadius:20, padding:'1px 8px' }}>
+                      <span style={{ fontSize:11, fontWeight:700, color:theme.accentGreen, background:'rgba(74,219,170,0.12)', border:'1px solid rgba(74,219,170,0.35)', borderRadius:20, padding:'1px 8px' }}>
                         Done!
                       </span>
                     )}
@@ -564,13 +567,13 @@ export default function WeekScreen({
                 const isEditing = editingSetId === s.id;
                 return (
                   <div key={s.id}
-                    style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background: isEditing ? '#162d48' : '#2d4a6a', border: `1px solid ${isEditing ? '#4adbaa' : '#1e3a55'}`, borderRadius:9, padding:'9px 12px', marginBottom:7, transition:'all .15s' }}>
-                    <div style={{ fontSize:12, color: isEditing ? '#4adbaa' : '#8bbdd8' }}>Set {i + 1}</div>
+                    style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background: isEditing ? theme.bgSurface : theme.borderRaised, border: `1px solid ${isEditing ? theme.accentGreen : theme.borderDefault}`, borderRadius:9, padding:'9px 12px', marginBottom:7, transition:'all .15s' }}>
+                    <div style={{ fontSize:12, color: isEditing ? theme.accentGreen : theme.textSecondary }}>Set {i + 1}</div>
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                      <div style={{ fontSize:13, fontWeight:600, color:'#f0f8ff' }}>
+                      <div style={{ fontSize:13, fontWeight:600, color:theme.textPrimary }}>
                         {setMainValue(s)}
                         {s.vals.reps && (s.vals.weight || s.vals.added) && (s.type === 'strength' || s.type === 'bodyweight') && (
-                          <span style={{ color:'#8bbdd8', fontWeight:400, marginLeft:5 }}>× {s.vals.reps} reps</span>
+                          <span style={{ color:theme.textSecondary, fontWeight:400, marginLeft:5 }}>× {s.vals.reps} reps</span>
                         )}
                       </div>
                       <span
@@ -584,7 +587,7 @@ export default function WeekScreen({
                           } else { setEachSide(false); }
                           setFieldVals(editVals);
                         }}
-                        style={{ fontSize:15, cursor:'pointer', color: isEditing ? '#4adbaa' : '#5a9adc', lineHeight:1, padding:'2px 4px' }}
+                        style={{ fontSize:15, cursor:'pointer', color: isEditing ? theme.accentGreen : theme.accentBlue, lineHeight:1, padding:'2px 4px' }}
                       >✎</span>
                     </div>
                   </div>
@@ -601,8 +604,8 @@ export default function WeekScreen({
           <div className="card">
             {isRunning && (
               <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-                <button onClick={() => setSprintMode(false)} style={{ flex:1, padding:'10px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:12, transition:'all .15s', background:!sprintMode?'#0d1e30':'#162d48', borderColor:!sprintMode?'#4a9adc':'#1e3a55', color:!sprintMode?'#7dd8ff':'#8bbdd8' }}>🏃 Distance Run</button>
-                <button onClick={() => setSprintMode(true)}  style={{ flex:1, padding:'10px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:12, transition:'all .15s', background:sprintMode?'#2a1a00':'#162d48', borderColor:sprintMode?'#ff6b4a':'#1e3a55', color:sprintMode?'#ff6b4a':'#8bbdd8' }}>⚡ Sprint / Timed</button>
+                <button onClick={() => setSprintMode(false)} style={{ flex:1, padding:'10px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:12, transition:'all .15s', background:!sprintMode?theme.bgCardAlt:theme.bgSurface, borderColor:!sprintMode?theme.accentBlue:theme.borderDefault, color:!sprintMode?theme.accentBlueLight:theme.textSecondary }}>🏃 Distance Run</button>
+                <button onClick={() => setSprintMode(true)}  style={{ flex:1, padding:'10px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:12, transition:'all .15s', background:sprintMode?`rgba(255,107,74,0.1)`:theme.bgSurface, borderColor:sprintMode?theme.accentOrange:theme.borderDefault, color:sprintMode?theme.accentOrange:theme.textSecondary }}>⚡ Sprint / Timed</button>
               </div>
             )}
 
@@ -615,25 +618,25 @@ export default function WeekScreen({
                   const isSprintDist  = f.id === 'sdist' && effectType === 'sprint';
                   return (
                     <div key={isRestField ? `rest-${curExIdx}` : f.id} className="field-wrap">
-                      <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:'#5adb9a',fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
+                      <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:theme.accentGreen,fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
                       {isRestField ? (
                         <RestTimerField defaultDur={parseInt(f.ph) || 90} onChange={v => setVal('rest', v)} />
                       ) : isWeightField ? (
                         <div style={{ display:'flex', gap:4 }}>
-                          <input className="input-field" style={{ flex:1 }} placeholder={`${prWeight != null ? prWeight : f.ph} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
-                          <button onClick={() => setWeightUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 10px', fontSize:12, color:'#5adb9a', cursor:'pointer', fontWeight:700, minWidth:36 }}>{weightUnit}</button>
+                          <input className="input-field" style={{ flex:1 }} placeholder={`${prWeight != null ? prWeight : (weightUnit === 'kg' ? '100' : f.ph)} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                          <button onClick={() => setWeightUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 10px', fontSize:12, color:theme.accentGreen, cursor:'pointer', fontWeight:700, minWidth:36 }}>{weightUnit}</button>
                         </div>
                       ) : isDistField ? (
                         <div style={{ display:'flex', gap:4 }}>
-                          <input className="input-field" style={{ flex:1 }} placeholder={f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
-                          <select value={distUnit} onChange={e => setDistUnit(e.target.value)} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 4px', fontSize:12, color:'#5adb9a', cursor:'pointer', outline:'none', fontWeight:600 }}>
+                          <input className="input-field" style={{ flex:1 }} placeholder={distUnit === 'km' ? '5' : distUnit === 'm' ? '1600' : f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                          <select value={distUnit} onChange={e => setDistUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentGreen, cursor:'pointer', outline:'none', fontWeight:600 }}>
                             {DIST_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
                         </div>
                       ) : isSprintDist ? (
                         <div style={{ display:'flex', gap:4 }}>
                           <input className="input-field" style={{ flex:1 }} placeholder="e.g. 100" value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
-                          <select value={sprintUnit} onChange={e => setSprintUnit(e.target.value)} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 4px', fontSize:12, color:'#e8a030', cursor:'pointer', outline:'none', fontWeight:600, width:36, flexShrink:0 }}>
+                          <select value={sprintUnit} onChange={e => setSprintUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentOrangeGold, cursor:'pointer', outline:'none', fontWeight:600, width:36, flexShrink:0 }}>
                             {SPRINT_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
                         </div>
@@ -654,7 +657,7 @@ export default function WeekScreen({
                             <span className="notes-preview" style={{ color: noteText ? '#9ae0b0' : undefined }}>{noteText || 'Add a note...'}</span>
               <span style={{ color:'#3a5a3a', marginLeft:'auto' }}>›</span>
             </button>
-            <button className="btn-fde" style={{ marginTop:10, background:'#1a7a4a', boxShadow:'0 0 14px rgba(29,158,117,0.35)' }} onClick={handleSave}>
+            <button className="btn-fde" style={{ marginTop:10, background:theme.buttonSaveBg, boxShadow:'0 0 14px rgba(29,158,117,0.35)' }} onClick={handleSave}>
               {editingSetId !== null ? 'Update Set' : 'Save Set'}
             </button>
             {editingSetId !== null && (
@@ -679,13 +682,13 @@ export default function WeekScreen({
 
   // - Checklist View -
   return (
-    <div className="screen week-page" style={bgStyle}>
+    <div className="screen week-page" style={{ background:'#424242', ...bgStyle }}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
-      <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+      <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', position:'relative' }}>
         <div>
           <h1 style={{ margin:0 }}>My Workouts</h1>
           <p style={{ margin:0 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:'#f0f8ff',
+            <span style={{ fontSize:13, fontWeight:700, color:theme.textPrimary,
               background:'rgba(29,158,117,0.15)', border:'1px solid rgba(29,158,117,0.5)',
               borderRadius:20, padding:'2px 12px', display:'inline-block' }}>
               {format(weekAnchor, 'MMMM yyyy')}
@@ -695,11 +698,9 @@ export default function WeekScreen({
         <button
           onClick={() => setShowMonth(m => !m)}
           style={{
-            background: showMonth ? '#1a2e45' : '#0d1e30',
-            border: `1px solid ${showMonth ? '#ff6b4a' : '#1e3a55'}`,
-            borderRadius:9, padding:'6px 10px', cursor:'pointer',
-            fontSize:16, lineHeight:1, color: showMonth ? '#ff6b4a' : '#8bbdd8',
-            transition:'all .15s',
+            background:'none', border:'none', cursor:'pointer',
+            fontSize:18, lineHeight:1, color: showMonth ? theme.accentOrange : theme.textSecondary,
+            transition:'all .15s', padding:2,
           }}
         >📅</button>
       </div>
@@ -709,7 +710,7 @@ export default function WeekScreen({
         <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:14 }}>
           <button
             onClick={() => setWeekAnchor(d => addDays(d, -7))}
-            style={{ background:'none', border:'none', color:'#6a9a6a', fontSize:20, cursor:'pointer', padding:'0 2px', lineHeight:1, flexShrink:0 }}
+            style={{ background:'none', border:'none', color:theme.circuitLine, fontSize:20, cursor:'pointer', padding:'0 2px', lineHeight:1, flexShrink:0 }}
           >‹</button>
           <div className="week-row" style={{ flex:1, margin:0 }}>
           {weekDays.map((day, i) => {
@@ -724,7 +725,7 @@ export default function WeekScreen({
                 className={`day-pill${isToday ? ' today' : logged ? ' done' : ''}`}
                 style={{
                   cursor:'pointer',
-                  ...(isSelected && !isToday ? { borderColor:'#7dff4f', background:'#162d48', boxShadow:'0 0 10px rgba(125,255,79,0.5)' } : {}),
+                  ...(isSelected && !isToday ? { borderColor:theme.accentGreenNeon, background:theme.bgSurface, boxShadow:'0 0 10px rgba(125,255,79,0.5)' } : {}),
                   ...(isToday ? { boxShadow:'0 0 8px rgba(125,255,79,0.6)' } : {}),
                 }}
                 onClick={() => { setSelectedDate(dateStr); setShowMonth(false); }}
@@ -733,7 +734,7 @@ export default function WeekScreen({
                 <span className="day-num">{format(day,'d')}</span>
                 <div style={{ display:'flex', gap:2, justifyContent:'center', minHeight:7 }}>
                   {logged      && <div className="day-dot" style={{ margin:0 }} />}
-                  {hasPrescribed && <div style={{ width:5, height:5, borderRadius:'50%', background:'#ff6b4a' }} />}
+                  {hasPrescribed && <div style={{ width:5, height:5, borderRadius:'50%', background:theme.accentOrange }} />}
                 </div>
               </div>
             );
@@ -741,7 +742,7 @@ export default function WeekScreen({
           </div>
           <button
             onClick={() => setWeekAnchor(d => addDays(d, 7))}
-            style={{ background:'none', border:'none', color:'#6a9a6a', fontSize:20, cursor:'pointer', padding:'0 2px', lineHeight:1, flexShrink:0 }}
+            style={{ background:'none', border:'none', color:theme.circuitLine, fontSize:20, cursor:'pointer', padding:'0 2px', lineHeight:1, flexShrink:0 }}
           >›</button>
         </div>
 
@@ -750,22 +751,22 @@ export default function WeekScreen({
           const grid = getMonthGrid(monthYear.year, monthYear.month);
           const todayFmt = fmtDay(today);
           return (
-            <div style={{ background:'#0d1e30', border:'1px solid #1e3a55', borderRadius:14, padding:'10px 8px', marginBottom:12 }}>
+            <div style={{ background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:14, padding:'10px 8px', marginBottom:12 }}>
               {/* Month nav */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                <button onClick={prevMonth} style={{ background:'none', border:'none', color:'#ff6b4a', fontSize:18, cursor:'pointer', padding:'0 6px' }}>‹</button>
+                <button onClick={prevMonth} style={{ background:'none', border:'none', color:theme.accentOrange, fontSize:18, cursor:'pointer', padding:'0 6px' }}>‹</button>
                 <span style={{ fontSize:14, fontWeight:700, color:'#e0f0e0',
                   background:'rgba(29,158,117,0.15)', border:'1px solid rgba(29,158,117,0.5)',
                   borderRadius:20, padding:'3px 16px' }}>
                   {MONTH_NAMES[monthYear.month]} {monthYear.year}
                 </span>
-                <button onClick={nextMonth} style={{ background:'none', border:'none', color:'#ff6b4a', fontSize:18, cursor:'pointer', padding:'0 6px' }}>›</button>
+                <button onClick={nextMonth} style={{ background:'none', border:'none', color:theme.accentOrange, fontSize:18, cursor:'pointer', padding:'0 6px' }}>›</button>
               </div>
 
               {/* Day-of-week headers */}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3, marginBottom:3 }}>
                 {['M','T','W','T','F','S','S'].map((d,i) => (
-                  <div key={i} style={{ textAlign:'center', fontSize:9, color:'#4a7a9a', fontWeight:700, textTransform:'uppercase' }}>{d}</div>
+                  <div key={i} style={{ textAlign:'center', fontSize:9, color:theme.textMuted, fontWeight:700, textTransform:'uppercase' }}>{d}</div>
                 ))}
               </div>
 
@@ -784,17 +785,17 @@ export default function WeekScreen({
                       onClick={() => { setSelectedDate(ds); setWeekAnchor(day); setShowMonth(false); }}
                       style={{
                         borderRadius:7, padding:'5px 2px 4px', textAlign:'center', cursor:'pointer',
-                        background: isToday ? '#0f2238' : isSel ? '#162d48' : '#0d1e30',
-                        border: `1px solid ${isToday ? '#4a9adc' : isSel ? '#ff6b4a' : '#1e3a55'}`,
+                        background: isToday ? theme.bgCard : isSel ? theme.bgSurface : theme.bgCardAlt,
+                        border: `1px solid ${isToday ? theme.accentBlue : isSel ? theme.accentOrange : theme.borderDefault}`,
                         transition:'background .1s',
                       }}
                     >
-                      <div style={{ fontSize:12, fontWeight:600, color: isToday ? '#fff' : isSel ? '#ff6b4a' : '#c8e0f0', marginBottom:3 }}>
+                      <div style={{ fontSize:12, fontWeight:600, color: isToday ? '#fff' : isSel ? theme.accentOrange : theme.dayNum, marginBottom:3 }}>
                         {day.getDate()}
                       </div>
                       <div style={{ display:'flex', justifyContent:'center', gap:2 }}>
-                        {logged     && <div style={{ width:5, height:5, borderRadius:'50%', background:'#1d9e75' }} />}
-                        {prescribed && <div style={{ width:5, height:5, borderRadius:'50%', background:'#ff6b4a' }} />}
+                        {logged     && <div style={{ width:5, height:5, borderRadius:'50%', background:theme.accentGreenDark }} />}
+                        {prescribed && <div style={{ width:5, height:5, borderRadius:'50%', background:theme.accentOrange }} />}
                       </div>
                     </div>
                   );
@@ -804,12 +805,12 @@ export default function WeekScreen({
               {/* Legend */}
               <div style={{ display:'flex', gap:12, marginTop:10, marginBottom:6 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                  <div style={{ width:7, height:7, borderRadius:'50%', background:'#1d9e75' }} />
-                  <span style={{ fontSize:10, color:'#8bbdd8' }}>Logged</span>
+                  <div style={{ width:7, height:7, borderRadius:'50%', background:theme.accentGreenDark }} />
+                  <span style={{ fontSize:10, color:theme.textSecondary }}>Logged</span>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                  <div style={{ width:7, height:7, borderRadius:'50%', background:'#ff6b4a' }} />
-                  <span style={{ fontSize:10, color:'#8bbdd8' }}>Prescribed</span>
+                  <div style={{ width:7, height:7, borderRadius:'50%', background:theme.accentOrange }} />
+                  <span style={{ fontSize:10, color:theme.textSecondary }}>Prescribed</span>
                 </div>
               </div>
             </div>
@@ -851,7 +852,7 @@ export default function WeekScreen({
               <div className="section-label" style={{ margin:0 }}>{prescribed.name}</div>
               <div style={{ fontSize:10, color:'#6a9a6a' }}>{prescribed.exercises.filter((ex, i) => checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex === ex.name).length >= (parseInt(ex.sets) || 0)).length}/{prescribed.exercises.length} done</div>
             </div>
-            <div className="card" style={{ padding:'6px 10px', border:'1px solid #1e3a55', borderRadius:14 }}>
+            <div className="card" style={{ padding:'6px 10px', border:`1px solid ${theme.borderDefault}`, borderRadius:14 }}>
               {(() => {
                 const renderExRow = (ex, i) => {
                   const target  = parseInt(ex.sets) || 0;
@@ -867,7 +868,7 @@ export default function WeekScreen({
                     >
                       <div style={{ display:'flex', alignItems:'center', gap:9 }}>
                         <div
-                          style={{ width:17, height:17, borderRadius:4, flexShrink:0, border:`1px solid ${checked?'#1d9e75':'#2d4a2d'}`, background:checked?'#1d9e75':'transparent', display:'flex', alignItems:'center', justifyContent:'center' }}
+                          style={{ width:17, height:17, borderRadius:4, flexShrink:0, border:`1px solid ${checked?theme.accentGreenDark:'#2d4a2d'}`, background:checked?theme.accentGreenDark:'transparent', display:'flex', alignItems:'center', justifyContent:'center' }}
                           onClick={e => {
                             e.stopPropagation();
                             setCheckedItems(prev => { const next = new Set(prev); checked ? next.delete(i) : next.add(i); return next; });
@@ -879,7 +880,7 @@ export default function WeekScreen({
                           <div className="ex-name" style={{ textDecoration: checked ? 'line-through' : 'none' }}>{ex.name}</div>
                           {checked && (
                             <span style={{
-                              fontSize:8, fontWeight:800, color:'#4adbaa',
+                              fontSize:8, fontWeight:800, color:theme.accentGreen,
                               background:'rgba(74,219,170,0.12)', border:'1px solid rgba(74,219,170,0.35)',
                               borderRadius:20, padding:'2px 7px', letterSpacing:'0.05em',
                               whiteSpace:'nowrap', lineHeight:1.4,
@@ -912,7 +913,7 @@ export default function WeekScreen({
                           );
                         })()}
                         <span
-                          style={{ fontSize:16, color:'#ff6b4a', cursor:'pointer', padding:'0 2px' }}
+                          style={{ fontSize:16, color:theme.accentOrange, cursor:'pointer', padding:'0 2px' }}
                           onClick={e => {
                             e.stopPropagation();
                             if (exIdx === -1) return;
@@ -965,12 +966,12 @@ export default function WeekScreen({
           return (
             <div style={{ textAlign:'center', padding:'28px 10px 18px' }}>
               <div style={{ fontSize:36, marginBottom:8 }}>🛌</div>
-              <div style={{ fontSize:26, fontWeight:800, color:'#4adbaa', letterSpacing:'0.02em', marginBottom:18 }}>Rest Day!</div>
+              <div style={{ fontSize:26, fontWeight:800, color:theme.accentGreen, letterSpacing:'0.02em', marginBottom:18 }}>Rest Day!</div>
               <div style={{ background:'rgba(74,219,170,0.06)', border:'1px solid rgba(74,219,170,0.18)', borderRadius:14, padding:'18px 16px', maxWidth:320, margin:'0 auto' }}>
                 <div style={{ fontSize:13, color:'#c0e8d8', lineHeight:1.7, fontStyle:'italic', marginBottom:10 }}>
                   "{quote}"
                 </div>
-                <div style={{ fontSize:11, color:'#3a7a5a', fontWeight:600 }}>— {author}</div>
+                <div style={{ fontSize:11, color:theme.prescribedDone, fontWeight:600 }}>— {author}</div>
               </div>
             </div>
           );
@@ -983,16 +984,33 @@ export default function WeekScreen({
 
       {/* Quick-log panel  anchored to bottom, hidden in month view */}
       {!showMonth && (<>
-      <div style={{ flexShrink:0, background:'#162d48', padding:'6px 14px 8px', margin:'0 8px 12px', borderRadius:14, border:'1px solid #1e3a55' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-          <span style={{ fontSize:10, color:'#8bbdd8', textTransform:'uppercase', letterSpacing:'.06em' }}>Quick Log</span>
-          <span style={{ fontSize:11, fontWeight:700, color:'#5adb9a' }}>{curEx.name}</span>
-        </div>
+      <div style={{ flexShrink:0, background:theme.bgSurface, padding:'6px 14px 8px', margin:'0 8px 12px', borderRadius:14, border:`1px solid ${theme.borderDefault}` }}>
+        {(() => {
+          const qlDone   = sets.filter(s => s.date === selectedDate && s.ex === curEx.name).length;
+          const qlTarget = prescribedCurEx?.sets ?? null;
+          const qlLeft   = qlTarget != null ? Math.max(0, qlTarget - qlDone) : null;
+          const setLabel = qlDone > 0 && qlLeft != null
+            ? qlLeft === 1 ? 'last set' : qlLeft > 1 ? `set ${qlDone + 1}` : null
+            : null;
+          return (
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <span style={{ fontSize:10, color:theme.textSecondary, textTransform:'uppercase', letterSpacing:'.06em' }}>Quick Log</span>
+                {setLabel && (
+                  <span style={{ fontSize:10, fontWeight:700, color:'#00ff88', textTransform:'uppercase', letterSpacing:'.05em', textShadow:'0 0 8px rgba(0,255,136,0.5)' }}>
+                    · {setLabel}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize:11, fontWeight:700, color:theme.accentGreen }}>{curEx.name}</span>
+            </div>
+          );
+        })()}
 
         {isRunning && (
           <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-            <button onClick={() => setSprintMode(false)} style={{ flex:1, padding:'8px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:11, transition:'all .15s', background:!sprintMode?'#0d1e30':'#0d1e30', borderColor:!sprintMode?'#4a9adc':'#1e3a55', color:!sprintMode?'#7dd8ff':'#8bbdd8' }}>🏃 Distance Run</button>
-            <button onClick={() => setSprintMode(true)}  style={{ flex:1, padding:'8px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:11, transition:'all .15s', background:sprintMode?'#2a1a00':'#0d1e30', borderColor:sprintMode?'#ff6b4a':'#1e3a55', color:sprintMode?'#ff6b4a':'#8bbdd8' }}>⚡ Sprint / Timed</button>
+            <button onClick={() => setSprintMode(false)} style={{ flex:1, padding:'8px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:11, transition:'all .15s', background:theme.bgCardAlt, borderColor:!sprintMode?theme.accentBlue:theme.borderDefault, color:!sprintMode?theme.accentBlueLight:theme.textSecondary }}>🏃 Distance Run</button>
+            <button onClick={() => setSprintMode(true)}  style={{ flex:1, padding:'8px 6px', borderRadius:9, border:'2px solid', cursor:'pointer', fontWeight:700, fontSize:11, transition:'all .15s', background:sprintMode?`rgba(255,107,74,0.1)`:theme.bgCardAlt, borderColor:sprintMode?theme.accentOrange:theme.borderDefault, color:sprintMode?theme.accentOrange:theme.textSecondary }}>⚡ Sprint / Timed</button>
           </div>
         )}
 
@@ -1005,25 +1023,25 @@ export default function WeekScreen({
               const isSprintDist  = f.id === 'sdist' && effectType === 'sprint';
               return (
                 <div key={isRestField ? `rest-${curExIdx}` : f.id} className="field-wrap">
-                  <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:'#5adb9a',fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
+                  <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:theme.accentGreen,fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
                   {isRestField ? (
                     <RestTimerField defaultDur={parseInt(f.ph) || 90} onChange={v => setVal('rest', v)} />
                   ) : isWeightField ? (
                     <div style={{ display:'flex', gap:4 }}>
-                      <input className="input-field" style={{ flex:1 }} placeholder={`${prWeight != null ? prWeight : f.ph} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
-                      <button onClick={() => setWeightUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 10px', fontSize:12, color:'#5adb9a', cursor:'pointer', fontWeight:700, minWidth:36 }}>{weightUnit}</button>
+                      <input className="input-field" style={{ flex:1 }} placeholder={`${prWeight != null ? prWeight : (weightUnit === 'kg' ? '100' : f.ph)} ${weightUnit === 'lb' ? 'lbs' : weightUnit}`} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                      <button onClick={() => setWeightUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 10px', fontSize:12, color:theme.accentGreen, cursor:'pointer', fontWeight:700, minWidth:36 }}>{weightUnit}</button>
                     </div>
                   ) : isDistField ? (
                     <div style={{ display:'flex', gap:4 }}>
-                      <input className="input-field" style={{ flex:1 }} placeholder={f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
-                      <select value={distUnit} onChange={e => setDistUnit(e.target.value)} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 4px', fontSize:12, color:'#5adb9a', cursor:'pointer', outline:'none', fontWeight:600 }}>
+                      <input className="input-field" style={{ flex:1 }} placeholder={distUnit === 'km' ? '5' : distUnit === 'm' ? '1600' : f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                      <select value={distUnit} onChange={e => setDistUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentGreen, cursor:'pointer', outline:'none', fontWeight:600 }}>
                         {DIST_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                       </select>
                     </div>
                   ) : isSprintDist ? (
                     <div style={{ display:'flex', gap:4 }}>
                       <input className="input-field" style={{ flex:1 }} placeholder="e.g. 100" value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
-                      <select value={sprintUnit} onChange={e => setSprintUnit(e.target.value)} style={{ background:'#1e3a55', border:'1px solid #2d4a6a', borderRadius:7, padding:'6px 4px', fontSize:12, color:'#e8a030', cursor:'pointer', outline:'none', fontWeight:600 }}>
+                      <select value={sprintUnit} onChange={e => setSprintUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentOrangeGold, cursor:'pointer', outline:'none', fontWeight:600 }}>
                         {SPRINT_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                       </select>
                     </div>
@@ -1045,7 +1063,7 @@ export default function WeekScreen({
                           <span className="notes-preview" style={{ color: noteText ? '#9ae0b0' : undefined }}>{noteText || 'Add a note...'}</span>
             <span style={{ color:'#3a5a3a', marginLeft:'auto' }}>›</span>
           </button>
-          <button className="btn-fde" style={{ flex:1, background:'#1a7a4a', boxShadow:'0 0 14px rgba(29,158,117,0.35)' }} onClick={handleSave}>Save Set</button>
+          <button className="btn-fde" style={{ flex:1, background:theme.buttonSaveBg, boxShadow:'0 0 14px rgba(29,158,117,0.35)' }} onClick={handleSave}>Save Set</button>
         </div>
         {flash && <div className="flash">✓ Set saved!</div>}
       </div>
@@ -1056,18 +1074,19 @@ export default function WeekScreen({
 }
 
 function BlankWarningModal({ onConfirm, onCancel, message }) {
+  const { theme } = useTheme();
   return (
     <div style={{
       position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
       display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000,
     }}>
       <div style={{
-        background:'#0d1e30', border:'2px solid #cc2222', borderRadius:16,
+        background:theme.bgCardAlt, border:'2px solid #cc2222', borderRadius:16,
         padding:'24px 20px', width:300, maxWidth:'85vw',
         boxShadow:'0 0 32px rgba(200,30,30,0.5)',
       }}>
         <div style={{ fontSize:17, fontWeight:700, marginBottom:10 }}>
-          <span style={{ color:'#ff6b4a' }}>⚠ </span>
+          <span style={{ color:theme.accentOrange }}>⚠ </span>
           <span style={{ color:'#ffffff' }}>MISSING FIELDS</span>
         </div>
         <div style={{ fontSize:13, color:'#c8e0f0', marginBottom:20, lineHeight:1.6 }}>
@@ -1080,7 +1099,7 @@ function BlankWarningModal({ onConfirm, onCancel, message }) {
           >Save Anyway</button>
           <button
             onClick={onCancel}
-            style={{ flex:1, padding:11, borderRadius:9, background:'#0d1e30', border:'1px solid #1e3a55', color:'#8bbdd8', fontSize:13, cursor:'pointer' }}
+            style={{ flex:1, padding:11, borderRadius:9, background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, color:theme.textSecondary, fontSize:13, cursor:'pointer' }}
           >Go Back</button>
         </div>
       </div>

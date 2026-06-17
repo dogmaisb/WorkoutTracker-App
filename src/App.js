@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import goatImg from './assets/splash/PerformanceGOAT.png';
+import limestoneImg from './assets/splash/Limestonewall.png';
 import './styles.css';
 
 import WeekScreen      from './screens/WeekScreen';
@@ -7,6 +9,8 @@ import { HistoryScreen, DetailScreen, AllExercisesScreen } from './screens/Histo
 import TimersScreen    from './screens/TimersScreen';
 import { SettingsScreen, NotesScreen, ExerciseLibraryScreen } from './screens/OtherScreens';
 import DietScreen from './screens/DietScreen';
+import { loadSettings, saveSettings } from './storage';
+import { ThemeProvider } from './ThemeContext';
 
 const NAV = [
   { key:'week',     label:'Week',     icon:<WeekIcon /> },
@@ -17,8 +21,61 @@ const NAV = [
   { key:'settings', label:'Settings', icon:<SettingsIcon /> },
 ];
 
+function SplashScreen({ onDismiss }) {
+  const [ready, setReady] = useState(false);
+  const [fading, setFading] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 3500);
+    return () => clearTimeout(t);
+  }, []);
+  function dismiss() {
+    if (!ready) return;
+    setFading(true);
+    setTimeout(onDismiss, 400);
+  }
+  return (
+    <div onClick={dismiss} style={{
+      position:'absolute', inset:0, zIndex:999, borderRadius:'inherit',
+      overflow:'hidden', background:'#111',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:18,
+      transition:'opacity 0.4s ease', opacity: fading ? 0 : 1,
+      cursor: ready ? 'pointer' : 'default',
+    }}>
+      {/* Layer 1: Goat behind wall */}
+      <img src={goatImg} alt="PerformanceGOAT" style={{ width:260, height:260, objectFit:'cover', borderRadius:16, position:'absolute', zIndex:0, marginTop:-77, marginLeft:20 }} />
+
+      {/* Layer 2: Limestone wall on top */}
+      <img src={limestoneImg} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:1 }} />
+      {/* Dark overlay to deepen the wall */}
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.25)', zIndex:1 }} />
+
+      {/* Layer 3: All text */}
+      <div style={{ textAlign:'right', position:'absolute', bottom:117, right:16, zIndex:2 }}>
+        <div style={{ fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'0.02em',
+          textShadow:'0 0 20px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,1), 0 4px 20px rgba(0,0,0,0.8), 0 0 40px rgba(57,224,122,0.3), 3px 3px 0px rgba(0,0,0,0.6)' }}>PerformanceGOAT</div>
+        <div style={{ fontSize:11, color:'#39e07a', fontWeight:600, marginTop:5, letterSpacing:'0.04em',
+          textShadow:'0 0 10px rgba(57,224,122,0.6), 0 2px 4px rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.7), 0 0 25px rgba(57,224,122,0.3)' }}>
+          Coach Smith, CSCS · USAW-2 · FRCms
+        </div>
+      </div>
+      <div style={{ position:'absolute', bottom:28, fontSize:10, color:'#FFD700', letterSpacing:'0.06em', zIndex:2, display:'flex', alignItems:'center', gap:3,
+        textShadow:'0 0 10px rgba(255,215,0,0.7), 0 2px 4px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.4)' }}>
+        <span style={{ position:'relative', display:'inline-flex', alignItems:'center' }}>
+          <svg viewBox="0 0 24 24" style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', width:28, height:28, opacity:0.35, zIndex:-1 }}>
+            <polygon points="13,1 3,14 11,14 11,23 21,10 13,10" fill="#FFD700" />
+          </svg>
+          POWERED
+        </span>
+        {' BY COACH SMITH COACHING SYSTEMS'}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [splash,    setSplash]    = useState(true);
   const [tab,       setTab]       = useState('week');
+
   const [detailEx,  setDetailEx]  = useState(null);
   const [allExPage, setAllExPage] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
@@ -29,9 +86,25 @@ export default function App() {
   const [fieldVals, setFieldVals] = useState({});
   const [sprintMode,setSprintMode]= useState(false);
   const [curExIdx,  setCurExIdx]  = useState(0);
-  const [distUnit,   setDistUnit]   = useState('mi');
-  const [sprintUnit, setSprintUnit] = useState('yd');
-  const [weightUnit, setWeightUnit] = useState('lb');
+  const [distUnit,   setDistUnit]   = useState(() => loadSettings().distUnit   || 'mi');
+  const [sprintUnit, setSprintUnit] = useState(() => loadSettings().sprintUnit || 'yd');
+  const [weightUnit, setWeightUnit] = useState(() => loadSettings().weightUnit || 'lb');
+
+  function changeWeightUnit(u) {
+    const next = typeof u === 'function' ? u(weightUnit) : u;
+    setWeightUnit(next);
+    saveSettings({ ...loadSettings(), weightUnit: next });
+  }
+  function changeDistUnit(u) {
+    const next = typeof u === 'function' ? u(distUnit) : u;
+    setDistUnit(next);
+    saveSettings({ ...loadSettings(), distUnit: next });
+  }
+  function changeSprintUnit(u) {
+    const next = typeof u === 'function' ? u(sprintUnit) : u;
+    setSprintUnit(next);
+    saveSettings({ ...loadSettings(), sprintUnit: next });
+  }
   const [stateVersion, setStateVersion] = useState(0);
 
   function bumpState() { setStateVersion(v => v + 1); }
@@ -70,27 +143,29 @@ export default function App() {
         curExIdx={curExIdx}
         setCurExIdx={setCurExIdx}
         distUnit={distUnit}
-        setDistUnit={setDistUnit}
+        setDistUnit={changeDistUnit}
         sprintUnit={sprintUnit}
-        setSprintUnit={setSprintUnit}
+        setSprintUnit={changeSprintUnit}
         weightUnit={weightUnit}
-        setWeightUnit={setWeightUnit}
+        setWeightUnit={changeWeightUnit}
       />
     );
-    if (tab === 'progress') return <ProgressScreen stateVersion={stateVersion} />;
+    if (tab === 'progress') return <ProgressScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
     if (tab === 'history') {
       if (detailEx) return <DetailScreen exerciseName={detailEx} onBack={() => setDetailEx(null)} stateVersion={stateVersion} />;
       if (allExPage) return <AllExercisesScreen onBack={() => setAllExPage(false)} onOpenDetail={ex => setDetailEx(ex)} stateVersion={stateVersion} />;
       return <HistoryScreen onOpenDetail={ex => setDetailEx(ex)} onOpenAllEx={() => setAllExPage(true)} stateVersion={stateVersion} />;
     }
     if (tab === 'timers')   return <TimersScreen />;
-    if (tab === 'diet')     return <DietScreen stateVersion={stateVersion} />;
-    if (tab === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} />;
+    if (tab === 'diet')     return <DietScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
+    if (tab === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} />;
   }
 
   return (
+    <ThemeProvider>
     <div className="app">
       <div className="phone">
+        {splash && <SplashScreen onDismiss={() => setSplash(false)} />}
         {renderScreen()}
         {!showNotes && !showExLib && (
           <nav className="nav">
@@ -104,6 +179,7 @@ export default function App() {
         )}
       </div>
     </div>
+    </ThemeProvider>
   );
 }
 

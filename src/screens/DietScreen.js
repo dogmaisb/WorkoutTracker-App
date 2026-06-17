@@ -1,6 +1,7 @@
 import { useBackground } from '../useBackground';
 import React, { useState, useEffect } from 'react';
 import { loadSettings } from '../storage';
+import { useTheme } from '../ThemeContext';
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 const DIET_KEY = 'wt_diet_v1';
@@ -86,6 +87,7 @@ function sumMacros(mealItems) {
 
 // ── Calorie Ring ──────────────────────────────────────────────────────────────
 function CalorieRing({ total, goal, mealTotals, macros }) {
+  const { theme } = useTheme();
   const SIZE = 250, cx = 125, cy = 125, R = 72, stroke = 16;
   const circ = 2 * Math.PI * R;
   const over = goal > 0 && total > goal;
@@ -202,6 +204,7 @@ function CalorieRing({ total, goal, mealTotals, macros }) {
 
 // ── TDEE Panel ────────────────────────────────────────────────────────────────
 function TDEEPanel({ tdeeData, setTdeeData, tdee, goalCal, onSave }) {
+  const { theme } = useTheme();
   const inp = (id, label, ph) => (
     <div style={{ flex:1, minWidth:60 }}>
       <div style={{ fontSize:9, color:'#4a7a9a', marginBottom:3, textTransform:'uppercase', letterSpacing:'.05em' }}>{label}</div>
@@ -281,6 +284,7 @@ function TDEEPanel({ tdeeData, setTdeeData, tdee, goalCal, onSave }) {
 
 // ── Meal Detail Page ──────────────────────────────────────────────────────────
 function MealPage({ meal, items, onBack, onSubmit }) {
+  const { theme } = useTheme();
   const bgStyle = useBackground('diet');
   const blankRow = () => ({ id: Date.now() + Math.random(), name:'', cal:'', carbs:'', fats:'', protein:'', chol:'', sodium:'' });
 
@@ -703,6 +707,7 @@ function MealPage({ meal, items, onBack, onSubmit }) {
 
 // ── Trend Graph ───────────────────────────────────────────────────────────────
 function TrendGraph({ history, goalCal, showBodyweight }) {
+  const { theme } = useTheme();
   const [mode,   setMode]   = useState('calories'); // 'calories' | 'weight'
   const [period, setPeriod] = useState('week');     // 'week' | 'month' | 'year'
 
@@ -856,20 +861,32 @@ function TrendGraph({ history, goalCal, showBodyweight }) {
             </g>
           );
         })}
+        {/* Empty state overlay */}
+        {vals.length === 0 && (
+          <g transform={`translate(${W/2}, ${(H-16)/2})`}>
+            <defs>
+              <linearGradient id="emptyGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#7b3fe4"/>
+                <stop offset="100%" stopColor="#1d9e75"/>
+              </linearGradient>
+            </defs>
+            <rect x="-105" y="-22" width="210" height="44" rx="10"
+              fill="rgba(18,8,32,0.88)" stroke="rgba(160,100,255,0.45)" strokeWidth="1.2"/>
+            <rect x="-105" y="-22" width="210" height="44" rx="10"
+              fill="url(#emptyGrad)" opacity="0.18"/>
+            <text x="0" y="-8" textAnchor="middle" fontSize="11" fill="#c084fc">✦</text>
+            <text x="0" y="4" textAnchor="middle" fontSize="9" fill="#c9a8f0" fontWeight="600">No {mode} data yet</text>
+            <text x="0" y="15" textAnchor="middle" fontSize="8" fill="#7a5a9a">log meals to populate</text>
+          </g>
+        )}
       </svg>
-
-      {/* Empty state */}
-      {vals.length === 0 && (
-        <div style={{ textAlign:'center', fontSize:11, color:'#3a2a4a', marginTop:-10, paddingBottom:4 }}>
-          No {mode} data yet — log meals to populate
-        </div>
-      )}
     </div>
   );
 }
 
 // ── Main Diet Screen ──────────────────────────────────────────────────────────
-export default function DietScreen() {
+export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit: setGlobalWeightUnit }) {
+  const { theme } = useTheme();
   const bgStyle = useBackground("diet");
   const stored = loadDiet();
 
@@ -881,7 +898,9 @@ export default function DietScreen() {
   const [showTDEE,   setShowTDEE]   = useState(false);
   const [showClearWarn, setShowClearWarn] = useState(false);
   const [weightDraft, setWeightDraft] = useState('');
-  const [weightUnit, setWeightUnit] = useState('lb');
+  const weightUnit = globalWeightUnit || 'lb';
+  const setWeightUnit = setGlobalWeightUnit || (() => {});
+  const [bwConfirmVal, setBwConfirmVal] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCal, setShowCal] = useState(false);
   const [history, setHistory] = useState(stored.history || {});
@@ -959,21 +978,17 @@ export default function DietScreen() {
             {selectedDate.toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' })}
           </p>
         </div>
-        <div style={{ display:'flex', gap:6 }}>
+        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
           <button onClick={() => setShowCal(s => !s)} style={{
-            background: showCal ? '#1a0d2a' : '#071624',
-            border: `1px solid ${showCal ? '#6a3a9a' : '#3a1a5a'}`,
-            borderRadius:9, padding:'6px 10px', cursor:'pointer', fontSize:15,
+            background:'none', border:'none', cursor:'pointer', fontSize:18, padding:2,
+            color: showCal ? '#b07aff' : '#8bbdd8',
           }}>📅</button>
           <button onClick={() => setShowTDEE(s => !s)} style={{
-            background: showTDEE ? '#0d2a45' : '#071624',
-            border: `1px solid ${showTDEE ? '#4a9adc' : '#1e5080'}`,
-            borderRadius:9, padding:'6px 10px', cursor:'pointer',
-            fontSize:13, color: showTDEE ? '#7dd8ff' : '#8bbdd8',
+            background:'none', border:'none', cursor:'pointer',
+            fontSize:13, padding:2, color: showTDEE ? '#7dd8ff' : '#8bbdd8',
           }}>⚡ TDEE</button>
           <button onClick={() => setShowClearWarn(true)}
-            style={{ background:'#071624', border:'1px solid #1e5080', borderRadius:9,
-              padding:'6px 10px', cursor:'pointer', fontSize:13, color:'#4a7a9a' }}>🗑</button>
+            style={{ background:'none', border:'none', cursor:'pointer', fontSize:20, padding:2, color:'#ff6b6b' }}>🗑</button>
         </div>
       </div>
 
@@ -1090,6 +1105,7 @@ export default function DietScreen() {
             <button onClick={() => {
               const v = parseFloat(weightDraft);
               if (!v) return;
+              if (history[dateKey]?.weight) { setBwConfirmVal({ val: v, unit: weightUnit }); return; }
               const ts = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
               setHistory(h => ({ ...h, [dateKey]: { ...h[dateKey], weight: v, weightUnit, weightTime: ts } }));
               setWeightDraft('');
@@ -1103,12 +1119,38 @@ export default function DietScreen() {
             </button>
           </div>
           {history[dateKey]?.weight && (
-            <div style={{ fontSize:10, color:'#6a4a8a', marginTop:5 }}>
-              Saved: <span style={{ color:'#c8a8ff', fontWeight:700 }}>{history[dateKey].weight} {history[dateKey].weightUnit || 'lb'}</span>
-              {history[dateKey].weightTime && <span style={{ color:'#4a3a5a' }}> · {history[dateKey].weightTime}</span>}
+            <div style={{ fontSize:10, color:'#6a4a8a', marginTop:5, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span>Saved: <span style={{ color:'#c8a8ff', fontWeight:700 }}>{history[dateKey].weight} {history[dateKey].weightUnit || 'lb'}</span>
+              {history[dateKey].weightTime && <span style={{ color:'#4a3a5a' }}> · {history[dateKey].weightTime}</span>}</span>
+              {selectedDate.toDateString() === new Date().toDateString() && (
+                <span style={{ color:'#1d9e75', fontWeight:600, fontSize:10 }}>✓ Bodyweight logged today!</span>
+              )}
             </div>
           )}
         </div>}
+
+        {/* Duplicate weight confirmation modal */}
+        {bwConfirmVal !== null && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ background:'#0e0818', border:'1px solid #3a1a5a', borderRadius:14, padding:'20px 22px', width:280, textAlign:'center' }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#e8d0ff', marginBottom:8 }}>Already logged today</div>
+              <div style={{ fontSize:12, color:'#6a4a8a', marginBottom:18 }}>
+                You already logged <strong style={{ color:'#c8a8ff' }}>{history[dateKey]?.weight} {history[dateKey]?.weightUnit || 'lb'}</strong> today. Log <strong style={{ color:'#c8a8ff' }}>{bwConfirmVal.val} {bwConfirmVal.unit}</strong> as a second entry?
+              </div>
+              <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+                <button onClick={() => setBwConfirmVal(null)} style={{ flex:1, padding:'8px 0', borderRadius:8, border:'1px solid #3a1a5a', background:'transparent', color:'#6a4a8a', fontSize:13, cursor:'pointer' }}>Cancel</button>
+                <button onClick={() => {
+                  const ts = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+                  const existing = history[dateKey];
+                  const entries = existing?.weightEntries || [{ val: existing.weight, unit: existing.weightUnit || 'lb', time: existing.weightTime }];
+                  setHistory(h => ({ ...h, [dateKey]: { ...h[dateKey], weightEntries: [...entries, { val: bwConfirmVal.val, unit: bwConfirmVal.unit, time: ts }] } }));
+                  setWeightDraft('');
+                  setBwConfirmVal(null);
+                }} style={{ flex:1, padding:'8px 0', borderRadius:8, border:'1px solid #6a3a9a', background:'#1a0d2a', color:'#c8a8ff', fontSize:13, fontWeight:700, cursor:'pointer' }}>Log Again</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Trend graph */}
         <TrendGraph history={history} goalCal={goalCal} showBodyweight={showBodyweight} />

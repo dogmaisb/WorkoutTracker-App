@@ -4,8 +4,8 @@ const PRESCRIBED_KEY = 'wt_prescribed';
 const SETTINGS_KEY   = 'wt_settings';
 
 export function loadSettings() {
-  try { return { showBodyweightProgress: false, showBodyweightDiet: false, ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
-  catch { return { showBodyweightProgress: false, showBodyweightDiet: false }; }
+  try { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', theme: 'DEFAULT', ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
+  catch { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', theme: 'DEFAULT' }; }
 }
 export function saveSettings(s) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));

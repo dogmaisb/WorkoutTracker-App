@@ -13,14 +13,6 @@
 //   ...
 //   progress: progressBg,
 
-// -- Uncomment and fill in imports here --
-// import weekBg     from './week/my-photo.jpg';
-// import progressBg from './progress/my-photo.jpg';
-// import historyBg  from './history/my-photo.jpg';
-// import dietBg     from './diet/my-photo.jpg';
-// import timersBg   from './timers/my-photo.jpg';
-// import settingsBg from './settings/my-photo.jpg';
-
 const backgrounds = {
   week:     null,
   progress: null,
