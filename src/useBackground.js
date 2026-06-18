@@ -17,12 +17,23 @@ const AMERICAN_OVERLAYS = {
   settings: 'rgba(10,18,40,0.60)',
 };
 
+const HUNTER_OVERLAYS = {
+  week:     'rgba(8,10,4,0.68)',
+  progress: 'rgba(8,10,4,0.68)',
+  history:  'rgba(8,10,4,0.66)',
+  diet:     'rgba(8,10,4,0.68)',
+  timers:   'rgba(6,8,2,0.70)',
+  settings: 'rgba(6,8,2,0.70)',
+};
+
 export function useBackground(page) {
   const { themeName } = useTheme();
   const themeimgs = themeBackgrounds[themeName] || {};
   const img = themeimgs[page] || backgrounds[page];
   if (!img) return {};
-  const overlayMap = themeName === 'AMERICAN' ? AMERICAN_OVERLAYS : OVERLAYS;
+  const overlayMap = themeName === 'AMERICAN' ? AMERICAN_OVERLAYS
+    : themeName === 'HUNTER' ? HUNTER_OVERLAYS
+    : OVERLAYS;
   const overlay = overlayMap[page] || 'rgba(0,0,0,0.70)';
   return {
     backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${img})`,

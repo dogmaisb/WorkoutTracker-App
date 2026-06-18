@@ -5,6 +5,13 @@ import muricaSettings from './settings/MURICA.png';
 import muricaTimers   from './timers/MURICA.png';
 import muricaDiet     from './diet/MURICA.png';
 
+import hunterWeek     from './week/Grizzlyback.png';
+import hunterProgress from './progress/Grizzlyback.png';
+import hunterHistory  from './history/Grizzlyback.png';
+import hunterSettings from './settings/Grizzlyback.png';
+import hunterTimers   from './timers/Grizzlyback.png';
+import hunterDiet     from './diet/Grizzlyback.png';
+
 const backgrounds = {
   week:     null,
   progress: null,
@@ -22,6 +29,14 @@ export const themeBackgrounds = {
     settings: muricaSettings,
     timers:   muricaTimers,
     diet:     muricaDiet,
+  },
+  HUNTER: {
+    week:     hunterWeek,
+    progress: hunterProgress,
+    history:  hunterHistory,
+    settings: hunterSettings,
+    timers:   hunterTimers,
+    diet:     hunterDiet,
   },
 };
 
