@@ -5,6 +5,7 @@ import {
 } from '../storage';
 import { useTheme } from '../ThemeContext';
 import { themes, THEME_NAMES } from '../themes';
+import { useBackground } from '../useBackground';
 
 const ALL_KEYS = [
   'wt_sets', 'wt_exercises', 'wt_prescribed',
@@ -29,6 +30,7 @@ function exportData() {
 
 export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = 'lb', setWeightUnit, distUnit = 'mi', setDistUnit, sprintUnit = 'yd', setSprintUnit }) {
   const { theme, themeName, changeTheme } = useTheme();
+  const bgStyle = useBackground('settings');
   const [themeOpen, setThemeOpen] = useState(false);
   const [importFlash,  setImportFlash]  = useState(null);
   const [backupFlash,  setBackupFlash]  = useState(null);
@@ -170,7 +172,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
   }
 
   return (
-    <div className="screen week-page">
+    <div className="screen week-page" style={bgStyle}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ position:'relative' }}>
         <h1 style={{ margin:0 }}>Settings</h1>

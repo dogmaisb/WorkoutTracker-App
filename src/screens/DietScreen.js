@@ -86,7 +86,7 @@ function sumMacros(mealItems) {
 }
 
 // ── Calorie Ring ──────────────────────────────────────────────────────────────
-function CalorieRing({ total, goal, mealTotals, macros }) {
+function CalorieRing({ total, goal, mealTotals, macros, onDelete, onTDEE, showTDEE }) {
   const { theme } = useTheme();
   const SIZE = 250, cx = 125, cy = 125, R = 72, stroke = 16;
   const circ = 2 * Math.PI * R;
@@ -114,7 +114,7 @@ function CalorieRing({ total, goal, mealTotals, macros }) {
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', margin:'0 0 4px' }}>
       <svg width={SIZE} height={SIZE}>
         {/* Track */}
-        <circle cx={cx} cy={cy} r={R} fill="none" stroke="#1e3a55" strokeWidth={stroke} />
+        <circle cx={cx} cy={cy} r={R} fill="none" stroke={theme.dietRingEmpty} strokeWidth={stroke} />
 
         {/* Meal arc segments */}
         {segments.map((seg, i) => {
@@ -189,14 +189,25 @@ function CalorieRing({ total, goal, mealTotals, macros }) {
 
       </svg>
 
-      {/* Legend */}
-      <div style={{ display:'flex', gap:14 }}>
-        {MEALS.map(m => (
-          <div key={m.key} style={{ display:'flex', alignItems:'center', gap:4 }}>
-            <div style={{ width:8, height:8, borderRadius:'50%', background:m.color }} />
-            <span style={{ fontSize:10, color:'#8bbdd8' }}>{m.label}</span>
-          </div>
-        ))}
+      {/* Legend + delete/TDEE inline */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', paddingBottom:4 }}>
+        <button onClick={onDelete}
+          style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, padding:'0 4px', color:'#ff6b6b', flexShrink:0 }}>🗑</button>
+        <div style={{ display:'flex', gap:10 }}>
+          {MEALS.map(m => (
+            <div key={m.key} style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:m.color }} />
+              <span style={{ fontSize:10, color:'#8bbdd8' }}>{m.label}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={onTDEE} style={{
+          background: showTDEE ? 'rgba(255,255,255,0.12)' : 'none',
+          border:'none', borderRadius:6, cursor:'pointer',
+          fontSize:13, padding:'2px 7px', color:'#ffffff', fontWeight: showTDEE ? 700 : 400,
+          transition:'background .15s', flexShrink:0,
+          textShadow:'0 0 10px rgba(180,100,255,0.9), 0 0 20px rgba(140,60,220,0.5)',
+        }}>⚡ TDEE</button>
       </div>
     </div>
   );
@@ -969,32 +980,27 @@ export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit
   const calCells = Array.from({length: firstDay + daysInMonth}, (_,i) => i < firstDay ? null : i - firstDay + 1);
 
   return (
-    <div className="screen diet-page">
+    <div className="screen diet-page" style={bgStyle}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
-      <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+      <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
         <div>
           <h1 style={{ margin:0 }}>Diet</h1>
-          <p style={{ margin:0, fontSize:11, color:'#9a7abf' }}>
-            {selectedDate.toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' })}
-          </p>
         </div>
-        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          <button onClick={() => setShowCal(s => !s)} style={{
-            background:'none', border:'none', cursor:'pointer', fontSize:18, padding:2,
-            color: showCal ? '#b07aff' : '#8bbdd8',
-          }}>📅</button>
-          <button onClick={() => setShowTDEE(s => !s)} style={{
-            background:'none', border:'none', cursor:'pointer',
-            fontSize:13, padding:2, color: showTDEE ? '#7dd8ff' : '#8bbdd8',
-          }}>⚡ TDEE</button>
-          <button onClick={() => setShowClearWarn(true)}
-            style={{ background:'none', border:'none', cursor:'pointer', fontSize:20, padding:2, color:'#ff6b6b' }}>🗑</button>
-        </div>
+        <button onClick={() => setShowCal(s => !s)} style={{
+          background:'none', border:'none', cursor:'pointer', fontSize:18, padding:2,
+          color: showCal ? '#b07aff' : '#8bbdd8',
+          position:'absolute', bottom:8, right:16, zIndex:2,
+        }}>📅</button>
+      </div>
+
+      {/* Month/year label */}
+      <div style={{ fontSize:11, fontWeight:600, color:'#9a7abf', letterSpacing:'0.05em', textTransform:'uppercase', padding:'6px 14px 0' }}>
+        {selectedDate.toLocaleDateString('en-US', { month:'long', year:'numeric' })}
       </div>
 
       {/* Week strip */}
       <div style={{ display:'flex', justifyContent:'space-around', alignItems:'center',
-        padding:'8px 10px 4px', borderBottom:'1px solid #2a1a3a' }}>
+        padding:'0 10px 4px', marginTop:-4, borderBottom:'1px solid #2a1a3a' }}>
         <button onClick={() => setSelectedDate(d => { const n=new Date(d); n.setDate(n.getDate()-7); return n; })}
           style={{ background:'none', border:'none', color:'#6a3a9a', fontSize:18, cursor:'pointer', padding:'0 4px' }}>‹</button>
         {weekDays.map((d,i) => {
@@ -1058,7 +1064,9 @@ export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit
         )}
 
         {/* Ring with corner macros */}
-        <CalorieRing total={total} goal={goalCal} mealTotals={mealTotals} macros={macros} />
+        <CalorieRing total={total} goal={goalCal} mealTotals={mealTotals} macros={macros}
+          onDelete={() => setShowClearWarn(true)}
+          onTDEE={() => setShowTDEE(s => !s)} showTDEE={showTDEE} />
 
         {/* Meal buttons */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
@@ -1157,12 +1165,12 @@ export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit
 
         {/* Calories remaining bar */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-          background:'#0d1e30', border:'1px solid #1e5080', borderRadius:10,
+          background:theme.bgCardAlt, border:`1px solid ${theme.borderActive}`, borderRadius:10,
           padding:'8px 14px', marginTop:8 }}>
           <div>
-            <div style={{ fontSize:10, color:'#4a7a9a' }}>Daily Total</div>
-            <div style={{ fontSize:18, fontWeight:700, color:'#f0f8ff' }}>
-              {total.toLocaleString()} <span style={{ fontSize:11, color:'#4a7a9a' }}>kcal</span>
+            <div style={{ fontSize:10, color:theme.textMuted }}>Daily Total</div>
+            <div style={{ fontSize:18, fontWeight:700, color:theme.textPrimary }}>
+              {total.toLocaleString()} <span style={{ fontSize:11, color:theme.textMuted }}>kcal</span>
             </div>
           </div>
           {goalCal > 0 && (

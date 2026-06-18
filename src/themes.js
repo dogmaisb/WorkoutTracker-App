@@ -92,6 +92,7 @@ export const defaultTheme = {
   navInactive:      '#7aaec8',
   navHover:         '#c0e0f8',
   navActive:        '#7dff4f',
+  navLabelColor:    'inherit',
 
   // ── Inputs ────────────────────────────────────────────────────────────────
   inputBg:          '#162d48',
@@ -136,6 +137,7 @@ export const defaultTheme = {
   dayPillBg:        '#0f2238',
   dayPillTodayBg:   '#2d5a9a',
   dayPillTodayBorder:'#4a9adc',
+  dayPillTodayText: '#ffffff',
   dayLabel:         '#8bbdd8',
   dayNum:           '#c0d8f0',
   dayDot:           '#1d9e75',
@@ -232,6 +234,7 @@ export const defaultTheme = {
   timersSwDisplay:  '#ffffff',
 
   // ── Diet screen ───────────────────────────────────────────────────────────
+  dietRingEmpty:    '#1e3a55',
   dietBg:           '#160d20',
   dietStatusBg:     '#0e0814',
   dietStatusText:   '#7a6a8a',
@@ -361,6 +364,7 @@ export const carbonTheme = {
   navInactive:      '#555555',
   navHover:         '#ccffe8',
   navActive:        '#00ff88',
+  navLabelColor:    'inherit',
 
   // ── Inputs ────────────────────────────────────────────────────────────────
   inputBg:          '#1e1e1e',
@@ -405,6 +409,7 @@ export const carbonTheme = {
   dayPillBg:        '#161616',
   dayPillTodayBg:   '#1a0000',
   dayPillTodayBorder:'#cc0000',
+  dayPillTodayText: '#ffffff',
   dayLabel:         '#777777',
   dayNum:           '#ffffff',
   dayDot:           '#cc0000',
@@ -501,6 +506,7 @@ export const carbonTheme = {
   timersSwDisplay:  '#ffffff',
 
   // ── Diet screen ───────────────────────────────────────────────────────────
+  dietRingEmpty:    '#333333',
   dietBg:           '#000000',
   dietStatusBg:     '#000000',
   dietStatusText:   '#555555',
@@ -545,9 +551,282 @@ export const carbonTheme = {
   previewLabel:    'Black · charcoal · red · neon green',
 };
 
+export const americanTheme = {
+  ...defaultTheme,
+  name: 'AMERICAN',
+
+  // ── App shell ─────────────────────────────────────────────────────────────
+  bgApp:            '#707070',
+  bgAppMobile:      '#4a4a4a',
+  bgPhone:          '#787878',
+  bgPage:           '#4a4a4a',
+  bgStatusBar:      '#252525',
+  bgTopBar:         '#222222',
+  bgNav:            '#0d1428',
+  bgScroll:         '#4a4a4a',
+
+  // ── Cards / surfaces ──────────────────────────────────────────────────────
+  bgCard:           '#0f1830',
+  bgCardAlt:        '#0a1228',
+  bgSurface:        '#162040',
+  bgSurfaceRaised:  '#1e2e55',
+  bgInput:          '#162040',
+  bgInputDark:      '#0a1228',
+  bgWeekCard:       '#0a1228',
+  bgTopBarWeek:     'rgba(34,34,34,0.97)',
+
+  // ── Borders ───────────────────────────────────────────────────────────────
+  borderDefault:    '#1e2e55',
+  borderActive:     '#b22234',
+  borderMuted:      '#14203a',
+  borderRaised:     '#2a3a6a',
+  borderTopBar:     '#b22234',
+  borderPhone:      '#3a5aaa',
+
+  // ── Text ──────────────────────────────────────────────────────────────────
+  textPrimary:      '#ffffff',
+  textSecondary:    '#aabbdd',
+  textMuted:        '#4a6090',
+  textOnAccent:     '#ffffff',
+  textHeading:      '#ffffff',
+  textHeadingAlt:   '#e8f0ff',
+  textBright:       '#ffffff',
+  textBlack:        '#000',
+
+  // ── Accents ───────────────────────────────────────────────────────────────
+  accentGreen:      '#ffd700',
+  accentGreenBright:'#ffd700',
+  accentGreenNeon:  '#ffe84d',
+  accentGreenDark:  '#ccaa00',
+  accentGreenDeep:  '#4a3800',
+  accentGreenLogo:  '#ffd700',
+  accentBlue:       '#3a7ad8',
+  accentBlueLight:  '#7ab8ff',
+  accentBluePale:   '#b8d8ff',
+  accentBlueSky:    '#5b9bd8',
+  accentBlueDeep:   '#1a3a7a',
+  accentOrange:     '#b22234',
+  accentOrangeDark: '#8c1a28',
+  accentOrangeAmber:'#ffd700',
+  accentOrangeGold: '#ffd700',
+  accentRed:        '#b22234',
+  accentRedBright:  '#dc2a3e',
+  accentRedDeep:    '#7a0a1a',
+  accentRedSoft:    '#e05060',
+  accentPurple:     '#7ab8ff',
+  accentPurpleLight:'#b8d8ff',
+  accentPurpleDeep: '#1a3a7a',
+  accentGold:       '#ffd700',
+  accentGoldWarm:   '#ffd700',
+
+  // ── Buttons ───────────────────────────────────────────────────────────────
+  buttonFdeBg:       '#b22234',
+  buttonFdeBgHover:  '#dc2a3e',
+  buttonFdeText:     '#ffffff',
+  buttonSecondaryBg: '#0f1830',
+  buttonSecondaryText:'#aabbdd',
+  buttonGreenBg:     '#1a3a7a',
+  buttonGreenText:   '#7ab8ff',
+  buttonGreenBorder: '#3a7ad8',
+  buttonSaveBg:      '#b22234',
+
+  // ── Nav ───────────────────────────────────────────────────────────────────
+  navBg:            '#0d1428',
+  navBorder:        '#b22234',
+  navInactive:      '#aabbdd',
+  navHover:         '#ffffff',
+  navActive:        '#ffd700',
+  navLabelColor:    '#ffffff',
+
+  // ── Inputs ────────────────────────────────────────────────────────────────
+  inputBg:          '#162040',
+  inputBorder:      '#1e2e55',
+  inputText:        '#ffffff',
+  inputBorderFocus: '#3a7ad8',
+  inputPlaceholder: '#4a6090',
+
+  // ── Chips ─────────────────────────────────────────────────────────────────
+  chipBg:           '#0f1830',
+  chipBorder:       '#1e2e55',
+  chipText:         '#aabbdd',
+  chipBorderHover:  '#3a7ad8',
+  chipTextHover:    '#b8d8ff',
+  chipActiveBg:     '#1a3a7a',
+  chipActiveText:   '#7ab8ff',
+  mchipActiveBg:    '#1a2a5a',
+
+  // ── Stat boxes ────────────────────────────────────────────────────────────
+  statBoxBg:        '#0f1830',
+  statBoxVal:       '#ffd700',
+  statBoxLbl:       '#aabbdd',
+
+  // ── Badges ────────────────────────────────────────────────────────────────
+  badgeBg:          '#1a3a7a',
+  badgeText:        '#7ab8ff',
+  badgeBorder:      '#3a7ad8',
+  prBadgeBg:        '#b22234',
+  prBadgeText:      '#ffffff',
+
+  // ── Misc common ───────────────────────────────────────────────────────────
+  flashText:        '#ffd700',
+  emptyText:        '#4a6090',
+  dividerColor:     '#1e2e55',
+  backBtn:          '#b22234',
+  sectionLabel:     '#b22234',
+
+  // ── Week screen ───────────────────────────────────────────────────────────
+  weekBg:           '#4a4a4a',
+  weekCard:         '#0a1228',
+  weekBorder:       '#1e2e55',
+  dayPillBg:        '#0f1830',
+  dayPillTodayBg:   '#7a0a1a',
+  dayPillTodayBorder:'#b22234',
+  dayPillTodayText: '#ffffff',
+  dayLabel:         '#4a6090',
+  dayNum:           '#ffffff',
+  dayDot:           '#b22234',
+  exRowBorder:      '#14203a',
+  exRowHover:       '#162040',
+  exName:           '#ffffff',
+  exSub:            '#aabbdd',
+  circuitHeader:    '#ffd700',
+  circuitLine:      '#4a3800',
+  logTitle:         '#ffd700',
+  fieldLabel:       '#aabbdd',
+  prescribedDone:   '#1a3a7a',
+  weekArrow:        '#4a6090',
+  selectedDayBorder:'#ffd700',
+
+  // ── History screen ────────────────────────────────────────────────────────
+  historyBg:        '#4a4a4a',
+  historyStatusBg:  '#000000',
+  historyCardBg:    '#0f1830',
+  historyBorder:    '#1e2e55',
+  historyText:      '#ffffff',
+  historyTextMuted: '#4a6090',
+  historyGold:      '#ffd700',
+  historyGoldSoft:  '#ccaa00',
+  historyRowBg:     '#0a1228',
+  historyRowHover:  '#162040',
+  historyAccent:    '#b22234',
+  prCardBg:         '#7a0a1a',
+  prCardBorder:     '#b22234',
+  prCardVal:        '#ffd700',
+  prCardLbl:        '#dc2a3e',
+  eiRowBg:          '#0f1830',
+  eiVal:            '#ffd700',
+  drVal:            '#ffffff',
+  drNote:           '#4a6090',
+  isPrBg:           '#3a0a14',
+
+  // ── Progress screen ───────────────────────────────────────────────────────
+  progressBg:       '#4a4a4a',
+  progressStatusText:'#aaaaaa',
+  progressTopH1:    '#ffffff',
+  chartCardBg:      '#0f1830',
+  chartCardBgAlt:   '#0a1228',
+  chartCardBorder:  '#b22234',
+  chartCardBorderAlt:'#1e2e55',
+  chartCardGlow1:   'rgba(178,34,52,0.25)',
+  chartCardGlow2:   'rgba(178,34,52,0.12)',
+  chartCardGlow3:   'rgba(80,10,20,0.10)',
+  chartTitle:       '#ffffff',
+  chartTitleAlt:    '#ffffff',
+  sprintCardBg:     '#0f1830',
+  sprintDist:       '#ffffff',
+  sprintPr:         '#ffd700',
+  sprintNone:       '#4a6090',
+  sprintActiveBg:   '#3a0a14',
+  repWheelActive:   '#ffd700',
+  repWheelInactive: '#1e2e55',
+  modalBg:          '#0a1228',
+
+  // ── Graph / Recharts ──────────────────────────────────────────────────────
+  graphStroke:      '#ffd700',
+  graphFill:        '#ffd700',
+  graphDot:         '#ffd700',
+  graphDotStroke:   '#06080f',
+  graphAxis:        '#1e2e55',
+  graphAxisTick:    '#4a6090',
+  graphGrid:        'rgba(58,122,216,0.10)',
+  graphTooltipBg:   '#0a1228',
+  graphTooltipBorder:'#3a7ad8',
+  graphBwGrid:      'rgba(255,255,255,0.04)',
+  graphBwTick:      '#ffd700',
+
+  // ── Timers screen ─────────────────────────────────────────────────────────
+  timersBg:         '#4a4a4a',
+  timersStatusText: '#4a6090',
+  timersTabBg:      '#080b18',
+  timersTabBorder:  '#1e2e55',
+  timersTabText:    '#4a6090',
+  timersTabHover:   '#aabbdd',
+  timersTabActive:  '#ffffff',
+  timersAccent:     '#b22234',
+  timersChipBg:     '#0f1830',
+  timersChipBorder: '#1e2e55',
+  timersChipText:   '#4a6090',
+  timersGreen:      '#ffd700',
+  timersGreenBg:    '#2a1a00',
+  timersGreenBorder:'#ccaa00',
+  timersDotDone:    '#ffd700',
+  timersText:       '#ffffff',
+  timersTextMuted:  '#4a6090',
+  timersTextDim:    '#2a3a5a',
+  timersSurface:    '#0f1830',
+  timersSurfaceLight:'#162040',
+  timersSwDisplay:  '#ffffff',
+
+  // ── Diet screen ───────────────────────────────────────────────────────────
+  dietRingEmpty:    '#1e2e55',
+  dietBg:           '#4a4a4a',
+  dietStatusBg:     '#000000',
+  dietStatusText:   '#4a6090',
+  dietBorder:       '#1e2e55',
+  dietCardBg:       '#080b18',
+  dietCardBorder:   '#1e2e55',
+  dietPurple:       '#7ab8ff',
+  dietPurpleLight:  '#b8d8ff',
+  dietPurpleText:   '#5b9bd8',
+  dietPurpleDeep:   '#1a3a7a',
+  dietPurpleBg:     '#0a1a3a',
+  dietPurpleSel:    '#1e2e55',
+  dietPurpleBorder: '#1e2e55',
+  dietText:         '#ffffff',
+  dietTextMuted:    '#4a6090',
+  dietTrendCalLine: '#b22234',
+  dietTrendCalDot:  '#dc2a3e',
+  dietTrendWtLine:  '#ffd700',
+  dietGoalLine:     '#3a7ad8',
+
+  // Macro colors
+  macroCarbs:       '#ffd700',
+  macroFats:        '#b22234',
+  macroProtein:     '#7ab8ff',
+  macroChol:        '#b8d8ff',
+  macroSodium:      '#ffffff',
+
+  // ── Settings screen ───────────────────────────────────────────────────────
+  settingsBg:       '#4a4a4a',
+  settingsLabel:    '#ffffff',
+  settingsVal:      '#aabbdd',
+  toggleOnBg:       '#b22234',
+  toggleOnBorder:   '#dc2a3e',
+  toggleOffBg:      '#1e2e55',
+  toggleOffBorder:  '#2a3a6a',
+
+  // ── Splash ────────────────────────────────────────────────────────────────
+  splashBg:         '#4a4a4a',
+
+  // ── Theme picker preview swatches ─────────────────────────────────────────
+  previewSwatches: ['#06080f', '#b22234', '#3a7ad8', '#ffd700', '#7ab8ff', '#ffffff'],
+  previewLabel:    'Navy · red · gold · light blue',
+};
+
 export const themes = {
-  DEFAULT: defaultTheme,
-  CARBON:  carbonTheme,
+  DEFAULT:  defaultTheme,
+  CARBON:   carbonTheme,
+  AMERICAN: americanTheme,
 };
 
 export const THEME_NAMES = Object.keys(themes);

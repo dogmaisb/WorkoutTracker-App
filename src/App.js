@@ -172,7 +172,7 @@ export default function App() {
             {NAV.map(n => (
               <div key={n.key} className={`nav-tab${tab===n.key?' active':''}`} onClick={() => switchTab(n.key)}>
                 {n.icon}
-                {n.label}
+                <span className="nav-label">{n.label}</span>
               </div>
             ))}
           </nav>

@@ -37,7 +37,7 @@ const CSS_VAR_MAP = {
   buttonFdeText:'--buttonFdeText', buttonGreenBg:'--buttonGreenBg',
   buttonGreenText:'--buttonGreenText', buttonGreenBorder:'--buttonGreenBorder',
   weekBg:'--weekBg', weekCard:'--weekCard', dayPillBg:'--dayPillBg',
-  dayPillTodayBg:'--dayPillTodayBg', dayLabel:'--dayLabel', dayNum:'--dayNum',
+  dayPillTodayBg:'--dayPillTodayBg', dayPillTodayText:'--dayPillTodayText', dayLabel:'--dayLabel', dayNum:'--dayNum',
   dayDot:'--dayDot', exRowBorder:'--exRowBorder', exName:'--exName',
   circuitHeader:'--circuitHeader', circuitLine:'--circuitLine', logTitle:'--logTitle',
   bgTopBarWeek:'--bgTopBarWeek',
@@ -72,6 +72,7 @@ const CSS_VAR_MAP = {
   tagBtnHoverBg:'--tagBtnHoverBg', notesText:'--notesText',
   settingsLabel:'--settingsLabel', settingsVal:'--settingsVal',
   comingItem:'--comingItem',
+  navLabelColor:'--navLabelColor',
 };
 
 function applyThemeToCssVars(theme) {
@@ -85,7 +86,10 @@ export function ThemeProvider({ children }) {
   const [themeName, setThemeName] = useState(() => loadSettings().theme || 'DEFAULT');
   const theme = themes[themeName] || themes.DEFAULT;
 
-  useEffect(() => { applyThemeToCssVars(theme); }, [theme]);
+  useEffect(() => {
+    applyThemeToCssVars(theme);
+    document.documentElement.setAttribute('data-theme', themeName);
+  }, [theme, themeName]);
 
   function changeTheme(name) {
     setThemeName(name);

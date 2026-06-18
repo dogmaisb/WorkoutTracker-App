@@ -925,8 +925,9 @@ function IntervalTimer() {
 // - Main Timers Screen -
 export default function TimersScreen() {
   const [tab, setTab] = useState('rest');
+  const bgStyle = useBackground('timers');
   return (
-    <div className="screen timers-page">
+    <div className="screen timers-page" style={bgStyle}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="timer-tabs">
         {[['rest','⌚ Timer'],['stopwatch','⏱ Stopwatch'],['intervals','⏰ Intervals']].map(([key,label]) => (

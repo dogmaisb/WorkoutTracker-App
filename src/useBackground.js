@@ -1,6 +1,6 @@
-import backgrounds from './assets/backgrounds/index';
+import backgrounds, { themeBackgrounds } from './assets/backgrounds/index';
+import { useTheme } from './ThemeContext';
 
-// Overlay opacity per page — darker = more readable text over busy photos
 const OVERLAYS = {
   week:     'rgba(4,12,24,0.72)',
   progress: 'rgba(10,6,2,0.70)',
@@ -10,10 +10,20 @@ const OVERLAYS = {
   settings: 'rgba(4,4,4,0.70)',
 };
 
+const AMERICAN_OVERLAYS = {
+  week:     'rgba(10,18,40,0.60)',
+  progress: 'rgba(10,18,40,0.60)',
+  history:  'rgba(10,18,40,0.60)',
+  settings: 'rgba(10,18,40,0.60)',
+};
+
 export function useBackground(page) {
-  const img = backgrounds[page];
+  const { themeName } = useTheme();
+  const themeimgs = themeBackgrounds[themeName] || {};
+  const img = themeimgs[page] || backgrounds[page];
   if (!img) return {};
-  const overlay = OVERLAYS[page] || 'rgba(0,0,0,0.70)';
+  const overlayMap = themeName === 'AMERICAN' ? AMERICAN_OVERLAYS : OVERLAYS;
+  const overlay = overlayMap[page] || 'rgba(0,0,0,0.70)';
   return {
     backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${img})`,
     backgroundSize: 'cover',

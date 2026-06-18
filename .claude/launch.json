@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "WorkoutCoach",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3456", "C:\\Users\\Owner\\Desktop\\WorkoutCoach"],
+      "port": 3456
+    },
+    {
+      "name": "WorkoutTracker",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 3001
+    }
+  ]
+}

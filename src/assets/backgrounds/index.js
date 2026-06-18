@@ -1,17 +1,9 @@
-// ── Background Image Registry ─────────────────────────────────────────────────
-//
-// To add a background image for a page:
-//   1. Drop your image file into the matching subfolder:
-//        src/assets/backgrounds/progress/my-photo.jpg
-//   2. Uncomment (or add) the import line for that page below.
-//   3. Set the page key to the imported variable.
-//
-// Leave a key as `null` to use the default color theme for that page.
-//
-// Example:
-//   import progressBg from './progress/my-photo.jpg';
-//   ...
-//   progress: progressBg,
+import muricaWeek     from './week/MURICA.png';
+import muricaProgress from './progress/MURICA.png';
+import muricaHistory  from './history/MURICA.png';
+import muricaSettings from './settings/MURICA.png';
+import muricaTimers   from './timers/MURICA.png';
+import muricaDiet     from './diet/MURICA.png';
 
 const backgrounds = {
   week:     null,
@@ -20,6 +12,17 @@ const backgrounds = {
   diet:     null,
   timers:   null,
   settings: null,
+};
+
+export const themeBackgrounds = {
+  AMERICAN: {
+    week:     muricaWeek,
+    progress: muricaProgress,
+    history:  muricaHistory,
+    settings: muricaSettings,
+    timers:   muricaTimers,
+    diet:     muricaDiet,
+  },
 };
 
 export default backgrounds;

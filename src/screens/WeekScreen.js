@@ -247,7 +247,7 @@ export default function WeekScreen({
   weightUnit, setWeightUnit,
   stateVersion,
 }) {
-  const { theme } = useTheme();
+  const { theme, themeName } = useTheme();
   const bgStyle = useBackground("week");
 
   const [sets,         setSets]         = useState(loadSets());
@@ -684,16 +684,9 @@ export default function WeekScreen({
   return (
     <div className="screen week-page" style={{ background:'#424242', ...bgStyle }}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
-      <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', position:'relative' }}>
+      <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
         <div>
           <h1 style={{ margin:0 }}>My Workouts</h1>
-          <p style={{ margin:0 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:theme.textPrimary,
-              background:'rgba(29,158,117,0.15)', border:'1px solid rgba(29,158,117,0.5)',
-              borderRadius:20, padding:'2px 12px', display:'inline-block' }}>
-              {format(weekAnchor, 'MMMM yyyy')}
-            </span>
-          </p>
         </div>
         <button
           onClick={() => setShowMonth(m => !m)}
@@ -701,10 +694,19 @@ export default function WeekScreen({
             background:'none', border:'none', cursor:'pointer',
             fontSize:18, lineHeight:1, color: showMonth ? theme.accentOrange : theme.textSecondary,
             transition:'all .15s', padding:2,
+            position:'absolute', bottom:8, right:16, zIndex:2,
           }}
         >📅</button>
       </div>
       <div className="scroll">
+
+        {/* Month/year label */}
+        <div style={{ fontSize:11, fontWeight:600, color:theme.textPrimary, letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:4, marginTop:-8, paddingLeft:4,
+          ...(themeName === 'AMERICAN' ? { textShadow:'0 0 10px rgba(58,122,216,0.85), 0 0 20px rgba(58,122,216,0.4)' }
+            : themeName === 'CARBON' ? { textShadow:'0 0 10px rgba(0,255,136,0.85), 0 0 20px rgba(0,255,136,0.4)' }
+            : {}) }}>
+          {format(weekAnchor, 'MMMM yyyy')}
+        </div>
 
         {/* Week strip  always visible */}
         <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:14 }}>
@@ -995,7 +997,7 @@ export default function WeekScreen({
           return (
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                <span style={{ fontSize:10, color:theme.textSecondary, textTransform:'uppercase', letterSpacing:'.06em' }}>Quick Log</span>
+                <span style={{ fontSize:10, color:theme.backBtn, textTransform:'uppercase', letterSpacing:'.06em' }}>Quick Log</span>
                 {setLabel && (
                   <span style={{ fontSize:10, fontWeight:700, color:'#00ff88', textTransform:'uppercase', letterSpacing:'.05em', textShadow:'0 0 8px rgba(0,255,136,0.5)' }}>
                     · {setLabel}
