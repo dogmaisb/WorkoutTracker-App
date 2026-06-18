@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import goatImg from './assets/splash/PerformanceGOAT.png';
 import limestoneImg from './assets/splash/Limestonewall.png';
 import './styles.css';
@@ -89,6 +89,27 @@ export default function App() {
   const [distUnit,   setDistUnit]   = useState(() => loadSettings().distUnit   || 'mi');
   const [sprintUnit, setSprintUnit] = useState(() => loadSettings().sprintUnit || 'yd');
   const [weightUnit, setWeightUnit] = useState(() => loadSettings().weightUnit || 'lb');
+  const [pageSwipe,  setPageSwipe]  = useState(() => loadSettings().pageSwipe !== false);
+
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e) {
+    if (!pageSwipe || touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const keys = NAV.map(n => n.key);
+    const idx = keys.indexOf(tab);
+    if (dx < 0 && idx < keys.length - 1) switchTab(keys[idx + 1]);
+    else if (dx > 0 && idx > 0) switchTab(keys[idx - 1]);
+  }
 
   function changeWeightUnit(u) {
     const next = typeof u === 'function' ? u(weightUnit) : u;
@@ -158,7 +179,7 @@ export default function App() {
     }
     if (tab === 'timers')   return <TimersScreen />;
     if (tab === 'diet')     return <DietScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
-    if (tab === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} />;
+    if (tab === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} pageSwipe={pageSwipe} setPageSwipe={v => { setPageSwipe(v); saveSettings({ ...loadSettings(), pageSwipe: v }); }} />;
   }
 
   return (
@@ -166,7 +187,12 @@ export default function App() {
     <div className="app">
       <div className="phone">
         {splash && <SplashScreen onDismiss={() => setSplash(false)} />}
-        {renderScreen()}
+        <div style={{ flex:1, display:'flex', flexDirection:'column', minHeight:0 }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {renderScreen()}
+        </div>
         {!showNotes && !showExLib && (
           <nav className="nav">
             {NAV.map(n => (

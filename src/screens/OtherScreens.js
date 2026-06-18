@@ -28,7 +28,7 @@ function exportData() {
   URL.revokeObjectURL(url);
 }
 
-export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = 'lb', setWeightUnit, distUnit = 'mi', setDistUnit, sprintUnit = 'yd', setSprintUnit }) {
+export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = 'lb', setWeightUnit, distUnit = 'mi', setDistUnit, sprintUnit = 'yd', setSprintUnit, pageSwipe = true, setPageSwipe }) {
   const { theme, themeName, changeTheme } = useTheme();
   const bgStyle = useBackground('settings');
   const [themeOpen, setThemeOpen] = useState(false);
@@ -287,6 +287,25 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
 
         <div className="section-label">Display</div>
         <div className="card">
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0',
+            borderBottom: `1px solid ${theme.borderDefault}` }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:theme.textHeading }}>Page Swipe</div>
+              <div style={{ fontSize:11, color:theme.textMuted, marginTop:2 }}>Swipe left/right to switch pages</div>
+            </div>
+            <div onClick={() => setPageSwipe && setPageSwipe(!pageSwipe)} style={{
+              width:44, height:26, borderRadius:13, cursor:'pointer', position:'relative', transition:'background .2s',
+              background: pageSwipe ? theme.toggleOnBg : theme.toggleOffBg,
+              border: `1px solid ${pageSwipe ? theme.toggleOnBorder : theme.toggleOffBorder}`,
+              flexShrink:0, marginLeft:12,
+            }}>
+              <div style={{
+                position:'absolute', top:3, left: pageSwipe ? 20 : 3,
+                width:18, height:18, borderRadius:'50%', background: pageSwipe ? theme.toggleOnBorder : theme.textMuted,
+                transition:'left .2s, background .2s',
+              }} />
+            </div>
+          </div>
           {[
             { key:'showBodyweightProgress', label:'Body Weight on Progress', desc:'Show weight trend & log on the Progress screen' },
             { key:'showBodyweightDiet',     label:'Body Weight on Diet',     desc:'Show weight input & graph mode on the Diet screen' },
