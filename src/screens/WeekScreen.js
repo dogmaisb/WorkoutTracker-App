@@ -952,7 +952,7 @@ export default function WeekScreen({
                   if (seg.type === 'exercise') return renderExRow(seg.ex, seg.i);
                   return (
                     <div key={`circuit-${si}`}>
-                      <div className="circuit-header">{seg.label}</div>
+                      <div className="circuit-header"><span style={{ color: theme.circuitWordColor }}>Circuit</span><span style={{ color: theme.textBright }}> · </span> {seg.label}</div>
                       <div className="circuit-group">
                         {seg.group.map(({ ex, i }) => renderExRow(ex, i))}
                       </div>

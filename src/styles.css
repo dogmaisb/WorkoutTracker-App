@@ -184,6 +184,7 @@
 .top-bar::before { content: ''; position: absolute; inset: 0; background: #2e2e2e url('./assets/splash/ElitePCHname.png') center calc(50% + 8px) / 427px 146px no-repeat; opacity: 0.5; pointer-events: none; z-index: 0; }
 [data-theme="AMERICAN"] .top-bar::before { background-image: url('./assets/splash/ElitePCHmurica.png'); background-position: center calc(50% + 16px); }
 [data-theme="CARBON"] .top-bar::before { background-image: url('./assets/splash/ElitePCHname.png'); }
+[data-theme="EGYPTIAN"] .top-bar::before { background-image: url('./assets/splash/ElitePCHegypt.png'); background-position: center calc(50% + 23px); background-size: 406px 139px; }
 .top-bar > * { position: relative; z-index: 1; }
 .top-bar h1 { font-size: 20px; font-weight: 700; color: var(--textPrimary); }
 [data-theme="AMERICAN"] .top-bar h1 { text-shadow: 0 0 12px rgba(58,122,216,0.9), 0 0 24px rgba(58,122,216,0.5); }
