@@ -91,24 +91,78 @@ export default function App() {
   const [weightUnit, setWeightUnit] = useState(() => loadSettings().weightUnit || 'lb');
   const [pageSwipe,  setPageSwipe]  = useState(() => loadSettings().pageSwipe !== false);
 
-  const touchStartX = useRef(null);
-  const touchStartY = useRef(null);
+  const [swipeAdjacentTab, setSwipeAdjacentTab] = useState(null);
+  const [swipeDir, setSwipeDir] = useState(null); // 'left' | 'right'
+  const trackRef = useRef(null);
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, animating: false, adjacentTab: null, direction: null });
 
   function handleTouchStart(e) {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+    if (!pageSwipe || dragRef.current.animating) return;
+    dragRef.current.startX = e.touches[0].clientX;
+    dragRef.current.startY = e.touches[0].clientY;
+    dragRef.current.active = false;
+    dragRef.current.adjacentTab = null;
+    dragRef.current.direction = null;
+  }
+
+  function handleTouchMove(e) {
+    if (!pageSwipe || dragRef.current.animating) return;
+    const dx = e.touches[0].clientX - dragRef.current.startX;
+    const dy = e.touches[0].clientY - dragRef.current.startY;
+
+    if (!dragRef.current.active) {
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx) * 1.2) return;
+      const keys = NAV.map(n => n.key);
+      const idx = keys.indexOf(tab);
+      const direction = dx < 0 ? 'left' : 'right';
+      const adjacentTab = direction === 'left' ? keys[idx + 1] : keys[idx - 1];
+      if (!adjacentTab) return;
+      dragRef.current.active = true;
+      dragRef.current.direction = direction;
+      dragRef.current.adjacentTab = adjacentTab;
+      setSwipeAdjacentTab(adjacentTab);
+      setSwipeDir(direction);
+      return;
+    }
+
+    if (!trackRef.current) return;
+    const w = trackRef.current.parentElement.offsetWidth;
+    const clamped = dragRef.current.direction === 'left' ? Math.min(0, dx) : Math.max(0, dx);
+    trackRef.current.style.transform = `translateX(${-w + clamped}px)`;
   }
 
   function handleTouchEnd(e) {
-    if (!pageSwipe || touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    const keys = NAV.map(n => n.key);
-    const idx = keys.indexOf(tab);
-    if (dx < 0 && idx < keys.length - 1) switchTab(keys[idx + 1]);
-    else if (dx > 0 && idx > 0) switchTab(keys[idx - 1]);
+    if (!pageSwipe || !dragRef.current.active || dragRef.current.animating) {
+      dragRef.current.active = false;
+      return;
+    }
+    const dx = e.changedTouches[0].clientX - dragRef.current.startX;
+    const shouldSwitch = Math.abs(dx) >= 72;
+    const { adjacentTab, direction } = dragRef.current;
+    dragRef.current.animating = true;
+
+    if (trackRef.current) {
+      const w = trackRef.current.parentElement.offsetWidth;
+      trackRef.current.style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+      trackRef.current.style.transform = shouldSwitch
+        ? `translateX(${direction === 'left' ? -w * 2 : 0}px)`
+        : `translateX(${-w}px)`;
+      setTimeout(() => {
+        if (shouldSwitch) switchTab(adjacentTab);
+        setSwipeAdjacentTab(null);
+        setSwipeDir(null);
+        dragRef.current.active = false;
+        dragRef.current.animating = false;
+        if (trackRef.current) { trackRef.current.style.transition = ''; trackRef.current.style.transform = ''; }
+      }, 280);
+    } else {
+      if (shouldSwitch) switchTab(adjacentTab);
+      setSwipeAdjacentTab(null);
+      setSwipeDir(null);
+      dragRef.current.active = false;
+      dragRef.current.animating = false;
+    }
   }
 
   function changeWeightUnit(u) {
@@ -141,9 +195,11 @@ export default function App() {
     setShowExLib(false);
   }
 
-  function renderScreen() {
-    if (showExLib) return <ExerciseLibraryScreen onBack={() => { setShowExLib(false); bumpState(); }} />;
-    if (showNotes) return (
+  function renderScreen(forTab) {
+    const t = forTab !== undefined ? forTab : tab;
+    const isCurrent = forTab === undefined;
+    if (isCurrent && showExLib) return <ExerciseLibraryScreen onBack={() => { setShowExLib(false); bumpState(); }} />;
+    if (isCurrent && showNotes) return (
       <NotesScreen
         exerciseName={curExIdx}
         initialNote={noteText}
@@ -151,7 +207,7 @@ export default function App() {
         onBack={() => setShowNotes(false)}
       />
     );
-    if (tab === 'week') return (
+    if (t === 'week') return (
       <WeekScreen
         onOpenNotes={openNotes}
         stateVersion={stateVersion}
@@ -171,15 +227,15 @@ export default function App() {
         setWeightUnit={changeWeightUnit}
       />
     );
-    if (tab === 'progress') return <ProgressScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
-    if (tab === 'history') {
-      if (detailEx) return <DetailScreen exerciseName={detailEx} onBack={() => setDetailEx(null)} stateVersion={stateVersion} />;
-      if (allExPage) return <AllExercisesScreen onBack={() => setAllExPage(false)} onOpenDetail={ex => setDetailEx(ex)} stateVersion={stateVersion} />;
+    if (t === 'progress') return <ProgressScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
+    if (t === 'history') {
+      if (isCurrent && detailEx) return <DetailScreen exerciseName={detailEx} onBack={() => setDetailEx(null)} stateVersion={stateVersion} />;
+      if (isCurrent && allExPage) return <AllExercisesScreen onBack={() => setAllExPage(false)} onOpenDetail={ex => setDetailEx(ex)} stateVersion={stateVersion} />;
       return <HistoryScreen onOpenDetail={ex => setDetailEx(ex)} onOpenAllEx={() => setAllExPage(true)} stateVersion={stateVersion} />;
     }
-    if (tab === 'timers')   return <TimersScreen />;
-    if (tab === 'diet')     return <DietScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
-    if (tab === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} pageSwipe={pageSwipe} setPageSwipe={v => { setPageSwipe(v); saveSettings({ ...loadSettings(), pageSwipe: v }); }} />;
+    if (t === 'timers')   return <TimersScreen />;
+    if (t === 'diet')     return <DietScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
+    if (t === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} pageSwipe={pageSwipe} setPageSwipe={v => { setPageSwipe(v); saveSettings({ ...loadSettings(), pageSwipe: v }); }} />;
   }
 
   return (
@@ -187,11 +243,31 @@ export default function App() {
     <div className="app">
       <div className="phone">
         {splash && <SplashScreen onDismiss={() => setSplash(false)} />}
-        <div style={{ flex:1, display:'flex', flexDirection:'column', minHeight:0 }}
+        <div style={{ flex:1, display:'flex', flexDirection:'column', minHeight:0, overflow:'hidden', position:'relative' }}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {renderScreen()}
+          {swipeAdjacentTab ? (
+            <div ref={trackRef} style={{
+              display:'flex', flexDirection:'row',
+              width:'300%', height:'100%',
+              transform:`translateX(-33.333%)`,
+              willChange:'transform',
+            }}>
+              <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
+                {swipeDir === 'right' ? renderScreen(swipeAdjacentTab) : null}
+              </div>
+              <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden' }}>
+                {renderScreen()}
+              </div>
+              <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
+                {swipeDir === 'left' ? renderScreen(swipeAdjacentTab) : null}
+              </div>
+            </div>
+          ) : (
+            renderScreen()
+          )}
         </div>
         {!showNotes && !showExLib && (
           <nav className="nav">
