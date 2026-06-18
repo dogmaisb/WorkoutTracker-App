@@ -185,10 +185,17 @@
 [data-theme="AMERICAN"] .top-bar::before { background-image: url('./assets/splash/ElitePCHmurica.png'); background-position: center calc(50% + 16px); }
 [data-theme="CARBON"] .top-bar::before { background-image: url('./assets/splash/ElitePCHname.png'); }
 [data-theme="EGYPTIAN"] .top-bar::before { background-image: url('./assets/splash/ElitePCHegypt.png'); background-position: center calc(50% + 23px); background-size: 406px 139px; }
+[data-theme="HUNTER"] .top-bar::before { background-image: url('./assets/splash/ElitePCHhunter.png'); background-size: 418px 143px; background-position: center calc(50% + 10px); }
 .top-bar > * { position: relative; z-index: 1; }
 .top-bar h1 { font-size: 20px; font-weight: 700; color: var(--textPrimary); }
+[data-theme="DEFAULT"] .progress-page .top-bar h1,
+[data-theme="DEFAULT"] .week-page .top-bar h1 { text-shadow: 0 0 12px rgba(125,255,79,0.9), 0 0 24px rgba(125,255,79,0.6), 0 0 40px rgba(125,255,79,0.3); }
+[data-theme="DEFAULT"] .history-page .top-bar h1 { text-shadow: 0 0 12px rgba(64,220,200,0.9), 0 0 24px rgba(64,220,200,0.6), 0 0 40px rgba(64,220,200,0.3); }
+[data-theme="DEFAULT"] .diet-page .top-bar h1 { text-shadow: 0 0 12px rgba(168,100,220,0.9), 0 0 24px rgba(168,100,220,0.6), 0 0 40px rgba(168,100,220,0.3); }
 [data-theme="AMERICAN"] .top-bar h1 { text-shadow: 0 0 12px rgba(58,122,216,0.9), 0 0 24px rgba(58,122,216,0.5); }
 [data-theme="CARBON"] .top-bar h1 { text-shadow: 0 0 12px rgba(0,255,136,0.9), 0 0 24px rgba(0,255,136,0.5); }
+[data-theme="EGYPTIAN"] .top-bar h1 { text-shadow: 0 0 12px rgba(212,160,23,0.9), 0 0 24px rgba(212,160,23,0.6), 0 0 40px rgba(212,160,23,0.3); }
+[data-theme="HUNTER"] .top-bar h1 { text-shadow: 0 0 12px rgba(232,106,0,0.9), 0 0 24px rgba(232,106,0,0.6), 0 0 40px rgba(232,106,0,0.3); }
 .top-bar p  { font-size: 12px; color: var(--textSecondary); margin-top: 1px; }
 .scroll { flex: 1; overflow-y: auto; padding: 14px 16px 12px; }
 .scroll::-webkit-scrollbar { display: none; }

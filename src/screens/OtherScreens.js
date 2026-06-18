@@ -343,13 +343,13 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
           }}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ display:'flex', gap:4 }}>
-                {themes[themeName].previewSwatches.map((c, i) => (
+                {(themes[themeName] || themes.DEFAULT).previewSwatches.map((c, i) => (
                   <div key={i} style={{ width:14, height:14, borderRadius:'50%', background:c, border:'1px solid rgba(255,255,255,0.15)' }} />
                 ))}
               </div>
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color:theme.textPrimary }}>{themeName}</div>
-                <div style={{ fontSize:10, color:theme.textMuted, marginTop:1 }}>{themes[themeName].previewLabel}</div>
+                <div style={{ fontSize:10, color:theme.textMuted, marginTop:1 }}>{(themes[themeName] || themes.DEFAULT).previewLabel}</div>
               </div>
             </div>
             <div style={{ fontSize:16, color:theme.textMuted, transform: themeOpen ? 'rotate(180deg)' : 'none', transition:'transform .2s' }}>▾</div>
