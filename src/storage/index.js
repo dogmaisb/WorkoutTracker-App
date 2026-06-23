@@ -181,7 +181,7 @@ export const FIELD_DEFS = {
     { fields: [{ id:'rest',label:'Rest',ph:'60' },{ id:'rpe',label:'RPE',ph:'7' }] },
   ],
   power: [
-    { fields: [{ id:'pdist',label:'Distance',ph:'9.5' },{ id:'reps',label:'Attempts',ph:'3' }] },
+    { fields: [{ id:'reps',label:'Reps',ph:'5' },{ id:'pdist',label:'Distance/Height',ph:'9.5' }] },
     { fields: [{ id:'rest',label:'Rest (sec)',ph:'90' },{ id:'rpe',label:'RPE',ph:'7' }] },
   ],
 };
