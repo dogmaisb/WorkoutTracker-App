@@ -262,13 +262,13 @@ export default function App() {
             transform:`translateX(-33.333%)`,
             willChange:'transform',
           }}>
-            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
+            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none', display:'flex', flexDirection:'column' }}>
               {swipeDir === 'right' && swipeAdjacentTab ? renderScreen(swipeAdjacentTab) : null}
             </div>
-            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden' }}>
+            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', display:'flex', flexDirection:'column' }}>
               {renderScreen()}
             </div>
-            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
+            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none', display:'flex', flexDirection:'column' }}>
               {swipeDir === 'left' && swipeAdjacentTab ? renderScreen(swipeAdjacentTab) : null}
             </div>
           </div>
