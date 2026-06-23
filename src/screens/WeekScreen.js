@@ -1038,6 +1038,7 @@ export default function WeekScreen({
               const isWeightField = (f.id === 'weight' && effectType === 'strength') || (f.id === 'added' && effectType === 'bodyweight');
               const isDistField   = f.id === 'dist'  && (effectType === 'cardio' || effectType === 'cycling');
               const isSprintDist  = f.id === 'sdist' && effectType === 'sprint';
+              const isPowerDist   = f.id === 'pdist' && effectType === 'power';
               return (
                 <div key={isRestField ? `rest-${curExIdx}` : f.id} className="field-wrap">
                   <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:theme.accentGreen,fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
