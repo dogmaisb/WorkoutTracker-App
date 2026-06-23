@@ -97,11 +97,12 @@ const DAY_LABELS = ['M','T','W','T','F','S','S'];
 
 const DIST_UNITS   = ['mi', 'km', 'm', 'yd', 'ft'];
 const SPRINT_UNITS = ['yd', 'm', 'mi', 'km', 'ft'];
+const POWER_UNITS  = ['ft', 'in', 'yd', 'm'];
 const WEIGHT_UNITS = ['lb', 'kg'];
 
 // Fields that are numeric
 const NUMERIC_FIELDS = new Set([
-  'weight','reps','sets','rest','rpe','added','dist','dur','hr','cal','stime','wind','speed','power','elev'
+  'weight','reps','sets','rest','rpe','added','dist','dur','hr','cal','stime','wind','speed','power','elev','pdist'
 ]);
 
 // - Rest Timer Audio -
@@ -244,6 +245,7 @@ export default function WeekScreen({
   curExIdx, setCurExIdx,
   distUnit, setDistUnit,
   sprintUnit, setSprintUnit,
+  powerUnit, setPowerUnit,
   weightUnit, setWeightUnit,
   stateVersion,
 }) {
@@ -418,6 +420,9 @@ export default function WeekScreen({
     if (effectType === 'sprint' && valsToSave.sdist) {
       valsToSave.sprintUnit = sprintUnit;
     }
+    if (effectType === 'power' && valsToSave.pdist) {
+      valsToSave.powerUnit = powerUnit;
+    }
     if ((effectType === 'strength' || effectType === 'bodyweight') && (valsToSave.weight || valsToSave.added)) {
       valsToSave.weightUnit = weightUnit;
     }
@@ -455,7 +460,8 @@ export default function WeekScreen({
     const missingCardio   = effectType === 'cardio'    && !fieldVals.dist && !fieldVals.dur;
     const missingCycling  = effectType === 'cycling'   && !fieldVals.dist && !fieldVals.dur;
     const missingJumprope = effectType === 'jumprope'  && !fieldVals.reps && !fieldVals.dur;
-    if (missingWeight || missingReps || missingTime || missingDist || missingCardio || missingCycling || missingJumprope) {
+    const missingPower    = effectType === 'power'     && !fieldVals.pdist;
+    if (missingWeight || missingReps || missingTime || missingDist || missingCardio || missingCycling || missingJumprope || missingPower) {
       let msg;
       if (missingTime && missingDist) msg = 'Time and distance are blank. Are you sure you want to save this sprint set?';
       else if (missingTime)           msg = 'Time is blank. Are you sure you want to save this sprint set?';
@@ -463,6 +469,7 @@ export default function WeekScreen({
       else if (missingCardio)         msg = 'Distance and duration are both blank. Are you sure you want to save this entry?';
       else if (missingCycling)        msg = 'Distance and duration are both blank. Are you sure you want to save this ride?';
       else if (missingJumprope)       msg = 'Jumps and duration are both blank. Are you sure you want to save this set?';
+      else if (missingPower)          msg = 'Distance is blank. Are you sure you want to save this set?';
       else                            msg = 'Weight or reps are blank. Are you sure you want to save this set?';
       setBlankWarning(msg);
       return;
@@ -616,6 +623,7 @@ export default function WeekScreen({
                   const isWeightField = (f.id === 'weight' && effectType === 'strength') || (f.id === 'added' && effectType === 'bodyweight');
                   const isDistField   = f.id === 'dist'  && (effectType === 'cardio' || effectType === 'cycling');
                   const isSprintDist  = f.id === 'sdist' && effectType === 'sprint';
+                  const isPowerDist   = f.id === 'pdist' && effectType === 'power';
                   return (
                     <div key={isRestField ? `rest-${curExIdx}` : f.id} className="field-wrap">
                       <label className="field-label">{f.id === 'reps' && eachSide ? <>{f.label} <span style={{color:theme.accentGreen,fontWeight:700,fontSize:10}}>· each</span></> : f.label}</label>
@@ -638,6 +646,13 @@ export default function WeekScreen({
                           <input className="input-field" style={{ flex:1 }} placeholder="e.g. 100" value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
                           <select value={sprintUnit} onChange={e => setSprintUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentOrangeGold, cursor:'pointer', outline:'none', fontWeight:600, width:36, flexShrink:0 }}>
                             {SPRINT_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                          </select>
+                        </div>
+                      ) : isPowerDist ? (
+                        <div style={{ display:'flex', gap:4 }}>
+                          <input className="input-field" style={{ flex:1 }} placeholder={f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                          <select value={powerUnit} onChange={e => setPowerUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentGreen, cursor:'pointer', outline:'none', fontWeight:600, width:36, flexShrink:0 }}>
+                            {POWER_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
                         </div>
                       ) : (
@@ -1045,6 +1060,13 @@ export default function WeekScreen({
                       <input className="input-field" style={{ flex:1 }} placeholder="e.g. 100" value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
                       <select value={sprintUnit} onChange={e => setSprintUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentOrangeGold, cursor:'pointer', outline:'none', fontWeight:600 }}>
                         {SPRINT_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  ) : isPowerDist ? (
+                    <div style={{ display:'flex', gap:4 }}>
+                      <input className="input-field" style={{ flex:1 }} placeholder={f.ph} value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)} type="number" />
+                      <select value={powerUnit} onChange={e => setPowerUnit(e.target.value)} style={{ background:theme.borderDefault, border:`1px solid ${theme.borderRaised}`, borderRadius:7, padding:'6px 4px', fontSize:12, color:theme.accentGreen, cursor:'pointer', outline:'none', fontWeight:600 }}>
+                        {POWER_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                       </select>
                     </div>
                   ) : (

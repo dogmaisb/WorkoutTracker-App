@@ -28,7 +28,7 @@ function exportData() {
   URL.revokeObjectURL(url);
 }
 
-export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = 'lb', setWeightUnit, distUnit = 'mi', setDistUnit, sprintUnit = 'yd', setSprintUnit, pageSwipe = true, setPageSwipe }) {
+export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = 'lb', setWeightUnit, distUnit = 'mi', setDistUnit, sprintUnit = 'yd', setSprintUnit, powerUnit = 'ft', setPowerUnit, pageSwipe = true, setPageSwipe }) {
   const { theme, themeName, changeTheme } = useTheme();
   const bgStyle = useBackground('settings');
   const [themeOpen, setThemeOpen] = useState(false);
@@ -212,6 +212,18 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
               return <button onClick={() => setSprintUnit && setSprintUnit(imperial ? 'm' : 'yd')}
                 style={{ background: imperial ? 'rgba(0,255,136,0.1)' : `${theme.accentBlueSky}1a`, border:`1px solid ${imperial ? 'rgba(0,255,136,0.4)' : `${theme.accentBlueSky}66`}`, borderRadius:8, padding:'4px 14px', fontSize:13, fontWeight:700, color: imperial ? theme.accentGreenBright : theme.accentBlueSky, cursor:'pointer', letterSpacing:'0.04em' }}>
                 {imperial ? 'YD' : 'M'}
+              </button>;
+            })()}
+          </div>
+          <div className="settings-row" style={{ borderTop:`1px solid ${theme.borderDefault}` }}>
+            <span className="settings-label">Power / jump unit</span>
+            {(() => {
+              const units = ['ft','in','yd','m'];
+              const idx   = units.indexOf(powerUnit);
+              const next  = units[(idx + 1) % units.length];
+              return <button onClick={() => setPowerUnit && setPowerUnit(next)}
+                style={{ background:`${theme.accentGreenDark}22`, border:`1px solid ${theme.accentGreenDark}66`, borderRadius:8, padding:'4px 14px', fontSize:13, fontWeight:700, color:theme.accentGreen, cursor:'pointer', letterSpacing:'0.04em' }}>
+                {(powerUnit || 'ft').toUpperCase()}
               </button>;
             })()}
           </div>

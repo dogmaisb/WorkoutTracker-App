@@ -88,6 +88,7 @@ export default function App() {
   const [curExIdx,  setCurExIdx]  = useState(0);
   const [distUnit,   setDistUnit]   = useState(() => loadSettings().distUnit   || 'mi');
   const [sprintUnit, setSprintUnit] = useState(() => loadSettings().sprintUnit || 'yd');
+  const [powerUnit,  setPowerUnit]  = useState(() => loadSettings().powerUnit  || 'ft');
   const [weightUnit, setWeightUnit] = useState(() => loadSettings().weightUnit || 'lb');
   const [pageSwipe,  setPageSwipe]  = useState(() => loadSettings().pageSwipe !== false);
 
@@ -180,6 +181,11 @@ export default function App() {
     setSprintUnit(next);
     saveSettings({ ...loadSettings(), sprintUnit: next });
   }
+  function changePowerUnit(u) {
+    const next = typeof u === 'function' ? u(powerUnit) : u;
+    setPowerUnit(next);
+    saveSettings({ ...loadSettings(), powerUnit: next });
+  }
   const [stateVersion, setStateVersion] = useState(0);
 
   function bumpState() { setStateVersion(v => v + 1); }
@@ -223,6 +229,8 @@ export default function App() {
         setDistUnit={changeDistUnit}
         sprintUnit={sprintUnit}
         setSprintUnit={changeSprintUnit}
+        powerUnit={powerUnit}
+        setPowerUnit={changePowerUnit}
         weightUnit={weightUnit}
         setWeightUnit={changeWeightUnit}
       />
@@ -235,7 +243,7 @@ export default function App() {
     }
     if (t === 'timers')   return <TimersScreen />;
     if (t === 'diet')     return <DietScreen stateVersion={stateVersion} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} />;
-    if (t === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} pageSwipe={pageSwipe} setPageSwipe={v => { setPageSwipe(v); saveSettings({ ...loadSettings(), pageSwipe: v }); }} />;
+    if (t === 'settings') return <SettingsScreen onImport={bumpState} onOpenExerciseLibrary={() => setShowExLib(true)} weightUnit={weightUnit} setWeightUnit={changeWeightUnit} distUnit={distUnit} setDistUnit={changeDistUnit} sprintUnit={sprintUnit} setSprintUnit={changeSprintUnit} powerUnit={powerUnit} setPowerUnit={changePowerUnit} pageSwipe={pageSwipe} setPageSwipe={v => { setPageSwipe(v); saveSettings({ ...loadSettings(), pageSwipe: v }); }} />;
   }
 
   return (

@@ -4,8 +4,8 @@ const PRESCRIBED_KEY = 'wt_prescribed';
 const SETTINGS_KEY   = 'wt_settings';
 
 export function loadSettings() {
-  try { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', theme: 'DEFAULT', ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
-  catch { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', theme: 'DEFAULT' }; }
+  try { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', powerUnit: 'ft', theme: 'DEFAULT', ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
+  catch { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', powerUnit: 'ft', theme: 'DEFAULT' }; }
 }
 export function saveSettings(s) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
@@ -59,6 +59,16 @@ export const DEFAULT_EXERCISES = [
   { name: 'Dips',                type: 'bodyweight' },
   { name: 'Inverted rows',       type: 'bodyweight' },
   { name: 'Burpees',             type: 'bodyweight' },
+  // Power — distance-based throws, jumps, bounds
+  { name: 'Broad jump',          type: 'power'      },
+  { name: 'Triple broad jump',   type: 'power'      },
+  { name: 'Box jump',            type: 'power'      },
+  { name: 'Vertical jump',       type: 'power'      },
+  { name: 'Medball throw',       type: 'power'      },
+  { name: 'Medball chest pass',  type: 'power'      },
+  { name: 'Medball overhead throw', type: 'power'   },
+  { name: 'Medball rotational throw', type: 'power' },
+  { name: 'Standing long jump',  type: 'power'      },
   { name: 'Interval Sprints 100m',  type: 'sprint'    },
   // Cardio
   { name: 'Running',             type: 'cardio'     },
@@ -170,6 +180,10 @@ export const FIELD_DEFS = {
     { fields: [{ id:'reps',label:'Jumps',ph:'100' },{ id:'dur',label:'Duration (min)',ph:'3' }] },
     { fields: [{ id:'rest',label:'Rest',ph:'60' },{ id:'rpe',label:'RPE',ph:'7' }] },
   ],
+  power: [
+    { fields: [{ id:'pdist',label:'Distance',ph:'9.5' },{ id:'reps',label:'Attempts',ph:'3' }] },
+    { fields: [{ id:'rest',label:'Rest (sec)',ph:'90' },{ id:'rpe',label:'RPE',ph:'7' }] },
+  ],
 };
 
 export const METRIC_DEFS = {
@@ -179,6 +193,7 @@ export const METRIC_DEFS = {
   sprint:     ['stime'],
   cycling:    ['dist','dur','speed','power'],
   jumprope:   ['reps','dur','rpe'],
+  power:      ['pdist','reps','rpe'],
 };
 
 export const METRIC_LABELS = {
@@ -187,6 +202,7 @@ export const METRIC_LABELS = {
   pace:'Pace',hr:'Avg HR',cal:'Calories',
   stime:'Time (sec)',sdist:'Distance',wind:'Wind',surf:'Surface',
   speed:'Speed (mph)',power:'Power (W)',elev:'Elevation (ft)',
+  pdist:'Distance',
 };
 
 // Volume = weight × reps per set (handles eachSide "e" suffix)
@@ -199,7 +215,7 @@ export function calcSetVolume(set) {
 }
 
 export const PR_METRIC = {
-  strength:'weight', bodyweight:'reps', cardio:'dist', sprint:'stime', cycling:'dist', jumprope:'reps',
+  strength:'weight', bodyweight:'reps', cardio:'dist', sprint:'stime', cycling:'dist', jumprope:'reps', power:'pdist',
 };
 
 export const SPRINT_DISTANCES = ['40yd Dash','100m','200m','400m','1 Mile'];
@@ -461,6 +477,10 @@ export function setMainValue(set) {
     const sd = v.sdist ? `${v.sdist}${su ? ' '+su : ''}` : '';
     const st = v.stime ? `${v.stime}s` : '';
     return [st, sd].filter(Boolean).join(' · ') || '—';
+  }
+  if (set.type === 'power') {
+    const pu = v.powerUnit || 'ft';
+    return v.pdist ? `${v.pdist} ${pu}` : '—';
   }
   if (v.weight) return `${v.weight} ${weightUnit}`;
   if (v.dist)   return `${v.dist} ${distUnit}`;
