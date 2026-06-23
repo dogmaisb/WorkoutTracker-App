@@ -80,6 +80,7 @@ const EXERCISES = [
   { name: 'Dips',                type: 'bodyweight' },
   { name: 'Inverted rows',       type: 'bodyweight' },
   { name: 'Burpees',             type: 'bodyweight' },
+  { name: 'Plank',               type: 'timed'      },
   { name: 'Interval Sprints 100m',  type: 'sprint'    },
   // Cardio
   { name: 'Running',             type: 'cardio'     },
@@ -620,7 +621,7 @@ export default function WeekScreen({
               <div key={ri} className="field-row">
                 {row.fields.map(f => {
                   const isRestField   = f.id === 'rest';
-                  const isWeightField = (f.id === 'weight' && effectType === 'strength') || (f.id === 'added' && effectType === 'bodyweight');
+                  const isWeightField = (f.id === 'weight' && (effectType === 'strength' || effectType === 'power')) || (f.id === 'added' && effectType === 'bodyweight');
                   const isDistField   = f.id === 'dist'  && (effectType === 'cardio' || effectType === 'cycling');
                   const isSprintDist  = f.id === 'sdist' && effectType === 'sprint';
                   const isPowerDist   = f.id === 'pdist' && effectType === 'power';
@@ -657,7 +658,7 @@ export default function WeekScreen({
                         </div>
                       ) : (
                         <input className="input-field"
-                          placeholder={f.id === 'reps' && eachSide && prescribedCurEx ? (String(prescribedCurEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph}
+                          placeholder={f.id === 'reps' ? (prescribedCurEx && /^amrap$/i.test(String(prescribedCurEx.reps)) ? 'AMRAP' : eachSide && prescribedCurEx ? (String(prescribedCurEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph) : f.ph}
                           value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)}
                           type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
                       )}
@@ -1072,7 +1073,7 @@ export default function WeekScreen({
                     </div>
                   ) : (
                     <input className="input-field"
-                      placeholder={f.id === 'reps' && eachSide && prescribedCurEx ? (String(prescribedCurEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph}
+                      placeholder={f.id === 'reps' ? (prescribedCurEx && /^amrap$/i.test(String(prescribedCurEx.reps)) ? 'AMRAP' : eachSide && prescribedCurEx ? (String(prescribedCurEx.reps).match(/\d+/)||[f.ph])[0] + 'e' : f.ph) : f.ph}
                       value={fieldVals[f.id]||''} onChange={e => setVal(f.id, e.target.value)}
                       type={NUMERIC_FIELDS.has(f.id) ? 'number' : 'text'} />
                   )}

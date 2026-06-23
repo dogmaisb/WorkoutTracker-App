@@ -155,7 +155,7 @@ export default function App() {
         setSwipeDir(null);
         dragRef.current.active = false;
         dragRef.current.animating = false;
-        if (trackRef.current) { trackRef.current.style.transition = ''; trackRef.current.style.transform = ''; }
+        if (trackRef.current) { trackRef.current.style.transition = ''; trackRef.current.style.transform = 'translateX(-33.333%)'; }
       }, 280);
     } else {
       if (shouldSwitch) switchTab(adjacentTab);
@@ -256,26 +256,22 @@ export default function App() {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {swipeAdjacentTab ? (
-            <div ref={trackRef} style={{
-              display:'flex', flexDirection:'row',
-              width:'300%', height:'100%',
-              transform:`translateX(-33.333%)`,
-              willChange:'transform',
-            }}>
-              <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
-                {swipeDir === 'right' ? renderScreen(swipeAdjacentTab) : null}
-              </div>
-              <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden' }}>
-                {renderScreen()}
-              </div>
-              <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
-                {swipeDir === 'left' ? renderScreen(swipeAdjacentTab) : null}
-              </div>
+          <div ref={trackRef} style={{
+            display:'flex', flexDirection:'row',
+            width:'300%', height:'100%',
+            transform:`translateX(-33.333%)`,
+            willChange:'transform',
+          }}>
+            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
+              {swipeDir === 'right' && swipeAdjacentTab ? renderScreen(swipeAdjacentTab) : null}
             </div>
-          ) : (
-            renderScreen()
-          )}
+            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden' }}>
+              {renderScreen()}
+            </div>
+            <div style={{ width:'33.333%', flexShrink:0, height:'100%', overflow:'hidden', pointerEvents:'none' }}>
+              {swipeDir === 'left' && swipeAdjacentTab ? renderScreen(swipeAdjacentTab) : null}
+            </div>
+          </div>
         </div>
         {!showNotes && !showExLib && (
           <nav className="nav">

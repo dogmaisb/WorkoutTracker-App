@@ -86,7 +86,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
 
     if (data.workouts.length === 0) { errors.push('File contains no workouts'); return { valid: false, errors, warnings }; }
 
-    const VALID_TYPES = new Set(['strength','bodyweight','cardio','sprint','cycling','jumprope']);
+    const VALID_TYPES = new Set(['strength','bodyweight','cardio','sprint','cycling','jumprope','power','timed']);
     let missingDates = 0, missingNames = 0, missingReps = 0, badTypes = 0, totalEx = 0;
 
     data.workouts.forEach(w => {

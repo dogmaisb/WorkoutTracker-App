@@ -59,6 +59,8 @@ export const DEFAULT_EXERCISES = [
   { name: 'Dips',                type: 'bodyweight' },
   { name: 'Inverted rows',       type: 'bodyweight' },
   { name: 'Burpees',             type: 'bodyweight' },
+  // Timed holds
+  { name: 'Plank',               type: 'timed'      },
   // Power — distance-based throws, jumps, bounds
   { name: 'Broad jump',          type: 'power'      },
   { name: 'Triple broad jump',   type: 'power'      },
@@ -115,8 +117,14 @@ export function loadExercises() {
   try {
     const stored = JSON.parse(localStorage.getItem(EXER_KEY));
     if (!stored) return DEFAULT_EXERCISES.map(e => ({ ...e, origin: 'default' }));
-    // Backfill origin for entries saved before origin tagging existed
-    return stored.map(e => e.origin ? e : { ...e, origin: DEFAULT_EXERCISES.some(d => d.name === e.name) ? 'default' : 'coach' });
+    const defaultMap = new Map(DEFAULT_EXERCISES.map(e => [e.name, e]));
+    // Backfill origin and sync type from DEFAULT_EXERCISES (handles type migrations)
+    return stored.map(e => {
+      const def = defaultMap.get(e.name);
+      const origin = e.origin || (def ? 'default' : 'coach');
+      const type = def ? def.type : e.type;
+      return { ...e, origin, type };
+    });
   } catch { return DEFAULT_EXERCISES.map(e => ({ ...e, origin: 'default' })); }
 }
 
@@ -182,7 +190,11 @@ export const FIELD_DEFS = {
   ],
   power: [
     { fields: [{ id:'reps',label:'Reps',ph:'5' },{ id:'pdist',label:'Distance/Height',ph:'9.5' }] },
-    { fields: [{ id:'rest',label:'Rest (sec)',ph:'90' },{ id:'rpe',label:'RPE',ph:'7' }] },
+    { fields: [{ id:'rest',label:'Rest (sec)',ph:'90' },{ id:'weight',label:'Weight',ph:'10' }] },
+  ],
+  timed: [
+    { fields: [{ id:'dur',label:'Duration (sec)',ph:'60' },{ id:'rest',label:'Rest (sec)',ph:'60' }] },
+    { fields: [{ id:'rpe',label:'RPE',ph:'7' }] },
   ],
 };
 
@@ -193,7 +205,8 @@ export const METRIC_DEFS = {
   sprint:     ['stime'],
   cycling:    ['dist','dur','speed','power'],
   jumprope:   ['reps','dur','rpe'],
-  power:      ['pdist','reps','rpe'],
+  power:      ['pdist','reps','weight'],
+  timed:      ['dur','rpe'],
 };
 
 export const METRIC_LABELS = {
@@ -481,6 +494,9 @@ export function setMainValue(set) {
   if (set.type === 'power') {
     const pu = v.powerUnit || 'ft';
     return v.pdist ? `${v.pdist} ${pu}` : '—';
+  }
+  if (set.type === 'timed') {
+    return v.dur ? `${v.dur}s` : '—';
   }
   if (v.weight) return `${v.weight} ${weightUnit}`;
   if (v.dist)   return `${v.dist} ${distUnit}`;
