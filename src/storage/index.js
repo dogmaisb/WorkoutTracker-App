@@ -437,17 +437,7 @@ const COACH_SEED = {"_coach_export":true,"client":"Coach Smith","workouts":[{"da
 function initSeed() {
   if (localStorage.getItem(PRESCRIBED_KEY)) return;
   // Transform coach JSON into prescribed format (same logic as Settings import)
-  const prescribed = COACH_SEED.workouts.map(w => {
-    const circuitExes = (w.circuits || []).flatMap(ct =>
-      ct.exercises.map((ex, j) => ({
-        ...ex,
-        inCircuit: true,
-        circuitLabel: j === 0 ? (ct.name || 'Circuit') : undefined,
-        isLastInCircuit: j === ct.exercises.length - 1,
-      }))
-    );
-    return { ...w, exercises: [...(w.exercises || []), ...circuitExes] };
-  });
+  const prescribed = COACH_SEED.workouts.map(w => ({ ...w, exercises: buildExerciseList(w) }));
   localStorage.setItem(PRESCRIBED_KEY, JSON.stringify(prescribed));
   // Seed custom exercises if not yet stored
   if (!localStorage.getItem(EXER_KEY)) {
@@ -465,6 +455,32 @@ function initSeed() {
   }
 }
 try { initSeed(); } catch(e) {}
+
+// Build the flat exercise list for a workout, preserving coach-defined order via _order when present.
+export function buildExerciseList(w) {
+  const circuitExes = (w.circuits || []).map(ct =>
+    ct.exercises.map((ex, j) => ({
+      ...ex,
+      inCircuit: true,
+      circuitLabel: j === 0 ? (ct.name || 'Circuit') : undefined,
+      isLastInCircuit: j === ct.exercises.length - 1,
+    }))
+  );
+  if (w._order && w._order.length) {
+    const result = [];
+    for (const item of w._order) {
+      if (item.kind === 'ex') {
+        const ex = (w.exercises || [])[item.idx];
+        if (ex) result.push(ex);
+      } else if (item.kind === 'ct') {
+        const ctExList = circuitExes[item.idx];
+        if (ctExList) result.push(...ctExList);
+      }
+    }
+    return result;
+  }
+  return [...(w.exercises || []), ...circuitExes.flat()];
+}
 
 export function loadPrescribed() {
   try {

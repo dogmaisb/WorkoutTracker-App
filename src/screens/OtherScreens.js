@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   savePrescribed, loadPrescribed, loadExercises, saveExercises, loadSettings, saveSettings,
-  addCustomExercise, updateCustomExercise, deleteCustomExercise,
+  addCustomExercise, updateCustomExercise, deleteCustomExercise, buildExerciseList,
 } from '../storage';
 import { useTheme } from '../ThemeContext';
 import { themes, THEME_NAMES } from '../themes';
@@ -127,15 +127,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
         const existing = loadPrescribed();
         const merged   = [...existing];
         data.workouts.forEach(w => {
-          const circuitExes = (w.circuits || []).flatMap(ct =>
-            ct.exercises.map((ex, j) => ({
-              ...ex,
-              inCircuit: true,
-              circuitLabel: j === 0 ? (ct.name || 'Circuit') : undefined,
-              isLastInCircuit: j === ct.exercises.length - 1,
-            }))
-          );
-          const transformed = { ...w, exercises: [...(w.exercises || []), ...circuitExes] };
+          const transformed = { ...w, exercises: buildExerciseList(w) };
           const idx = merged.findIndex(x => x.date === w.date);
           if (idx >= 0) merged[idx] = transformed; else merged.push(transformed);
         });
