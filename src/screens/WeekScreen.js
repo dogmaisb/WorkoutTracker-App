@@ -686,7 +686,7 @@ export default function WeekScreen({
                 </button>
               </div>
             )}
-            {flash && <div className="flash">SET SAVED</div>}
+            {flash && <div className="flash" style={{ background: theme.buttonSaveBg, color: theme.flashText, boxShadow: `0 4px 28px ${theme.buttonSaveBg}88` }}>SET SAVED</div>}
           </div>
 
           <div style={{ height:20 }} />
@@ -1093,7 +1093,7 @@ export default function WeekScreen({
           </button>
           <button className="btn-fde" style={{ flex:1, background:theme.buttonSaveBg, boxShadow:'0 0 14px rgba(29,158,117,0.35)' }} onClick={handleSave}>Save Set</button>
         </div>
-        {flash && <div className="flash">SET SAVED</div>}
+        {flash && <div className="flash" style={{ background: theme.buttonSaveBg, color: theme.flashText, boxShadow: `0 4px 28px ${theme.buttonSaveBg}88` }}>SET SAVED</div>}
       </div>
       </>)}
       {blankWarning && <BlankWarningModal message={blankWarning} onConfirm={doSave} onCancel={() => setBlankWarning(null)} />}
