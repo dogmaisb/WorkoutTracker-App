@@ -954,8 +954,10 @@ export default function WeekScreen({
                     const label = ex.circuitLabel;
                     const group = [];
                     while (idx < items.length && items[idx].inCircuit) {
-                      group.push({ ex: items[idx], i: idx });
+                      const item = items[idx];
+                      group.push({ ex: item, i: idx });
                       idx++;
+                      if (item.isLastInCircuit) break;
                     }
                     segments.push({ type: 'circuit', label, group });
                   } else {
