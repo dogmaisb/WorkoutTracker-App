@@ -216,6 +216,7 @@ export default function App() {
     if (t === 'week') return (
       <WeekScreen
         onOpenNotes={openNotes}
+        onViewHistory={ex => { setDetailEx(ex); setTab('history'); }}
         stateVersion={stateVersion}
         noteText={noteText}
         setNoteText={setNoteText}

@@ -240,7 +240,7 @@ function RestTimerField({ defaultDur, onChange }) {
   );
 }
 export default function WeekScreen({
-  onOpenNotes, noteText, setNoteText,
+  onOpenNotes, onViewHistory, noteText, setNoteText,
   fieldVals, setFieldVals,
   sprintMode, setSprintMode,
   curExIdx, setCurExIdx,
@@ -289,11 +289,12 @@ export default function WeekScreen({
     } else if (pres && curEx) {
       presEx = pres.exercises.find(e => e.name.toLowerCase() === curEx.name.toLowerCase());
     }
+    const slExercise = curEx && /^sl\b/i.test(curEx.name.trim());
     if (presEx && presEx.reps != null) {
       const r = String(presEx.reps).toLowerCase();
-      setEachSide(/each|e$/.test(r));
+      setEachSide(/each|e$/.test(r) || slExercise);
     } else {
-      setEachSide(false);
+      setEachSide(!!slExercise);
     }
   }, [logExercise, selectedDate, curExIdx]);
 
@@ -490,7 +491,10 @@ export default function WeekScreen({
       <div className="screen week-page" style={bgStyle}>
         <div className="status-bar"><span>9:41</span><span>●●●</span></div>
         <div className="scroll" style={{ paddingTop:12 }}>
-          <button className="back-btn" onClick={() => setLogExercise(null)}>← Workout</button>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <button className="back-btn" style={{ marginBottom:0 }} onClick={() => setLogExercise(null)}>← Workout</button>
+            {onViewHistory && <button className="back-btn" style={{ marginBottom:0, color:theme.accentBlue }} onClick={() => onViewHistory(curEx?.name)}>📊 History</button>}
+          </div>
 
           {/* Exercise header */}
           {(() => {
