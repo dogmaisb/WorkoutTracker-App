@@ -54,8 +54,13 @@ export const DEFAULT_EXERCISES = [
   { name: 'Overhead squat',     type: 'strength'   },
   // Bodyweight
   { name: 'Pull-ups',            type: 'bodyweight' },
+  { name: 'Pullups',             type: 'bodyweight' },
+  { name: 'Pull ups',            type: 'bodyweight' },
+  { name: 'Weighted Pull-ups',   type: 'bodyweight' },
   { name: 'Chin-ups',            type: 'bodyweight' },
+  { name: 'Chinups',             type: 'bodyweight' },
   { name: 'Push-ups',            type: 'bodyweight' },
+  { name: 'Pushups',             type: 'bodyweight' },
   { name: 'Dips',                type: 'bodyweight' },
   { name: 'Inverted rows',       type: 'bodyweight' },
   { name: 'Burpees',             type: 'bodyweight' },
