@@ -289,7 +289,7 @@ export default function WeekScreen({
     } else if (pres && curEx) {
       presEx = pres.exercises.find(e => e.name.toLowerCase() === curEx.name.toLowerCase());
     }
-    const slExercise = curEx && /^sl\b/i.test(curEx.name.trim());
+    const slExercise = curEx && /^s[la]\b/i.test(curEx.name.trim());
     if (presEx && presEx.reps != null) {
       const r = String(presEx.reps).toLowerCase();
       setEachSide(/each|e$/.test(r) || slExercise);
@@ -394,11 +394,14 @@ export default function WeekScreen({
 
   function setVal(id, val) { setFieldVals(p => ({ ...p, [id]: val })); }
 
-  function fmtReps(r) {
+  function fmtReps(r, exName) {
     if (r == null) return '—';
     const s = String(r).trim().toLowerCase();
+    if (s === 'amrap') return 'AMRAP';
     const m = s.match(/^(\d+)\s*each$/) || s.match(/^(\d+)e$/);
-    return m ? m[1] + 'e' : r;
+    if (m) return m[1] + 'e';
+    if (exName && /^s[la]\b/i.test(String(exName).trim()) && /^\d+$/.test(s)) return s + 'e';
+    return r;
   }
 
   function pickEx(i, pIdx = null) {
@@ -920,14 +923,14 @@ export default function WeekScreen({
                               )}
                               <span className="badge">
                                 {checked ? (
-                                  <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}×{fmtReps(ex.reps)}</span>
+                                  <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}×{fmtReps(ex.reps, ex.name)}</span>
                                 ) : done === 0 ? (
-                                  <>{target}×{fmtReps(ex.reps)}</>
+                                  <>{target}×{fmtReps(ex.reps, ex.name)}</>
                                 ) : (
                                   <>
                                     <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}</span>
                                     <span style={{ color:'#ffb060', marginLeft:3 }}>{left}</span>
-                                    ×{fmtReps(ex.reps)}
+                                    ×{fmtReps(ex.reps, ex.name)}
                                   </>
                                 )}
                               </span>
