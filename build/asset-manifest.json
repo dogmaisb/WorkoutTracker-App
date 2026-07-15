@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/WorkoutTracker-App/static/css/main.cb3498c8.css",
+    "main.js": "/WorkoutTracker-App/static/js/main.f999668c.js",
+    "static/media/Limestonewall.png": "/WorkoutTracker-App/static/media/Limestonewall.980feaa3ac9e38b153b5.png",
+    "static/media/ElitePCHhunter.png": "/WorkoutTracker-App/static/media/ElitePCHhunter.544487d90a4c5e9db9d2.png",
+    "static/media/MURICA.png": "/WorkoutTracker-App/static/media/MURICA.51beb3cb11d4abf98002.png",
+    "static/media/PerformanceGOAT.png": "/WorkoutTracker-App/static/media/PerformanceGOAT.6f89e2bc7afb8fcde86e.png",
+    "static/media/Grizzlyback.png": "/WorkoutTracker-App/static/media/Grizzlyback.3932950e39fff195cc90.png",
+    "static/media/ElitePCHegypt.png": "/WorkoutTracker-App/static/media/ElitePCHegypt.68b6a7e663c449f3ddb5.png",
+    "static/media/ElitePCHname.png": "/WorkoutTracker-App/static/media/ElitePCHname.a08cff169e377da9138c.png",
+    "static/media/ElitePCHmurica.png": "/WorkoutTracker-App/static/media/ElitePCHmurica.892ae8c485dd79013b38.png",
+    "service-worker.js": "/WorkoutTracker-App/service-worker.js",
+    "index.html": "/WorkoutTracker-App/index.html",
+    "main.cb3498c8.css.map": "/WorkoutTracker-App/static/css/main.cb3498c8.css.map",
+    "main.f999668c.js.map": "/WorkoutTracker-App/static/js/main.f999668c.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.cb3498c8.css",
+    "static/js/main.f999668c.js"
+  ]
+}
