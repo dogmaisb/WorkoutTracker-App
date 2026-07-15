@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { loadSets, METRIC_DEFS, METRIC_LABELS, calcSetVolume, loadSettings } from '../storage';
+import { loadSets, METRIC_DEFS, METRIC_LABELS, calcSetVolume, loadSettings, normalizeExName } from '../storage';
 import { useTheme } from '../ThemeContext';
 
 const ITEM_H = 18;
@@ -352,13 +352,18 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
 
   useEffect(() => { setSets(loadSets()); }, [stateVersion]);
 
-  const allEx    = [...new Set([...BASE_EX, ...sets.map(s => s.ex)])];
+  const _normMapP = new Map();
+  for (const ex of [...BASE_EX, ...sets.map(s => s.ex)]) {
+    const k = normalizeExName(ex);
+    if (!_normMapP.has(k)) _normMapP.set(k, ex);
+  }
+  const allEx = [..._normMapP.values()];
   const filtered = search.trim()
     ? allEx.filter(e => e.toLowerCase().includes(search.toLowerCase()))
     : allEx;
   const activeEx  = filtered.includes(selEx) ? selEx : (filtered[0] || '');
   const isRunning = activeEx === 'Running';
-  const sample    = sets.find(s => s.ex === activeEx);
+  const sample    = sets.find(s => normalizeExName(s.ex) === normalizeExName(activeEx));
   const exType    = sample ? sample.type : 'strength';
   const mets      = isRunning ? CARDIO_METS : (METRIC_DEFS[exType] || METRIC_DEFS.strength);
   const activeMet = mets.includes(selMet) ? selMet : mets[0];
@@ -428,7 +433,7 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
   const availableReps = (() => {
     const counts = [...new Set(
       sets
-        .filter(s => s.ex === activeEx && s.vals.reps)
+        .filter(s => normalizeExName(s.ex) === normalizeExName(activeEx) && s.vals.reps)
         .map(s => parseInt(String(s.vals.reps).match(/\d+/)?.[0]))
         .filter(n => !isNaN(n))
     )].sort((a, b) => a - b);
@@ -441,7 +446,7 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
 
   function genericChartData(met) {
     if (met === 'volume') {
-      const exSets = sets.filter(s => s.ex === activeEx);
+      const exSets = sets.filter(s => normalizeExName(s.ex) === normalizeExName(activeEx));
       const byDate = new Map();
       exSets.forEach(s => {
         const vol = calcSetVolume(s);
@@ -455,7 +460,7 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
     }
     return sets
       .filter(s => {
-        if (s.ex !== activeEx) return false;
+        if (normalizeExName(s.ex) !== normalizeExName(activeEx)) return false;
         if (s.vals[met] === undefined) return false;
         if (isWeightMet && repFilter !== null) {
           const r = parseInt(String(s.vals.reps || '').match(/\d+/)?.[0]);
@@ -472,7 +477,7 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
   }
 
   const exSetsFiltered = sets.filter(s => {
-    if (s.ex !== activeEx) return false;
+    if (normalizeExName(s.ex) !== normalizeExName(activeEx)) return false;
     if (isWeightMet && repFilter !== null) {
       const r = parseInt(String(s.vals.reps || '').match(/\d+/)?.[0]);
       if (r !== repFilter) return false;
@@ -495,7 +500,7 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
     if (isVolumeMet) return maxVal.toLocaleString();
     if (activeMet === 'reps') {
       const bestSet = sets
-        .filter(s => s.ex === activeEx && parseFloat(s.vals.reps) === maxVal)
+        .filter(s => normalizeExName(s.ex) === normalizeExName(activeEx) && parseFloat(s.vals.reps) === maxVal)
         .sort((a, b) => (parseFloat(b.vals.weight) || 0) - (parseFloat(a.vals.weight) || 0))[0];
       const w = bestSet?.vals?.weight;
       const u = bestSet?.vals?.weightUnit || 'lb';

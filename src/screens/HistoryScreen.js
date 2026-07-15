@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   loadSets, saveSets, deleteSet, getPR, getVolumePR, setMainValue,
   PR_METRIC, METRIC_LABELS, FIELD_DEFS,
-  getStrengthPRs, getGenericPRs, getPRsForSet, calcSetVolume,
+  getStrengthPRs, getGenericPRs, getPRsForSet, calcSetVolume, normalizeExName,
 } from '../storage';
 
 const BASE_EX = [
@@ -66,11 +66,16 @@ export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
     velRef.current.raf = requestAnimationFrame(momentum);
   }
 
-  const allEx = [...new Set([...BASE_EX, ...sets.map(s => s.ex)])];
+  const _normMap1 = new Map();
+  for (const ex of [...BASE_EX, ...sets.map(s => s.ex)]) {
+    const k = normalizeExName(ex);
+    if (!_normMap1.has(k)) _normMap1.set(k, ex);
+  }
+  const allEx = [..._normMap1.values()];
 
   // Only exercises with at least one logged set, alphabetical
   const recordedEx = allEx
-    .filter(ex => sets.some(s => s.ex === ex))
+    .filter(ex => sets.some(s => normalizeExName(s.ex) === normalizeExName(ex)))
     .sort((a, b) => a.localeCompare(b));
 
   const filtered = search.trim()
@@ -141,7 +146,7 @@ export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
         </div>
         {!filtered.length && <div className="empty">No exercises found</div>}
         {filtered.map(ex => {
-          const exSets  = sets.filter(s => s.ex === ex);
+          const exSets  = sets.filter(s => normalizeExName(s.ex) === normalizeExName(ex));
           const last    = exSets.length ? exSets[exSets.length - 1] : null;
           const lastVal = last ? setMainValue(last) : '—';
           const lastTime = last ? `${last.date} · ${last.time}` : 'No entries yet';
@@ -172,8 +177,12 @@ export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
 
   useEffect(() => { setSets(loadSets()); }, [stateVersion]);
 
-  const allEx = [...new Set([...BASE_EX, ...sets.map(s => s.ex)])]
-    .sort((a, b) => a.localeCompare(b));
+  const _normMap2 = new Map();
+  for (const ex of [...BASE_EX, ...sets.map(s => s.ex)]) {
+    const k = normalizeExName(ex);
+    if (!_normMap2.has(k)) _normMap2.set(k, ex);
+  }
+  const allEx = [..._normMap2.values()].sort((a, b) => a.localeCompare(b));
 
   const filtered = search.trim()
     ? allEx.filter(e => e.toLowerCase().includes(search.toLowerCase()))
@@ -194,7 +203,7 @@ export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
         </div>
         <div style={{ fontSize:11, color:'#3a5a3a', marginBottom:10 }}>{filtered.length} exercise{filtered.length !== 1 ? 's' : ''}</div>
         {filtered.map(ex => {
-          const exSets  = sets.filter(s => s.ex === ex);
+          const exSets  = sets.filter(s => normalizeExName(s.ex) === normalizeExName(ex));
           const last    = exSets.length ? exSets[exSets.length - 1] : null;
           const lastVal = last ? setMainValue(last) : '—';
           const lastTime = last ? `${last.date} · ${last.time}` : 'No entries yet';
@@ -410,7 +419,7 @@ export function DetailScreen({ exerciseName, onBack }) {
   function reload() { setSets(loadSets()); }
   useEffect(() => { reload(); }, []);
 
-  const exSets = sets.filter(s => s.ex === exerciseName);
+  const exSets = sets.filter(s => normalizeExName(s.ex) === normalizeExName(exerciseName));
   const sorted = [...exSets].sort((a, b) => b.id - a.id); // newest first
   const type   = exSets.length ? exSets[0].type : 'strength';
   const pm     = PR_METRIC[type] || 'reps';

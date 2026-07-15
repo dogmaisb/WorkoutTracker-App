@@ -3,6 +3,23 @@ const EXER_KEY       = 'wt_exercises';
 const PRESCRIBED_KEY = 'wt_prescribed';
 const SETTINGS_KEY   = 'wt_settings';
 
+// Collapses spelling variants of SA/SL unilateral prefixes to a canonical key.
+// Only affects names starting with a known unilateral prefix — bilateral names
+// pass through unchanged so their history stays separate.
+export function normalizeExName(name) {
+  if (!name) return '';
+  return name.trim()
+    .replace(/^single[\s-]arm\b/i, 'SA')
+    .replace(/^single[\s-]leg\b/i, 'SL')
+    .replace(/^1[\s-]arm\b/i, 'SA')
+    .replace(/^1[\s-]leg\b/i, 'SL')
+    .replace(/^one[\s-]arm\b/i, 'SA')
+    .replace(/^one[\s-]leg\b/i, 'SL')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function loadSettings() {
   try { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', powerUnit: 'ft', theme: 'DEFAULT', ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) }; }
   catch { return { showBodyweightProgress: false, showBodyweightDiet: false, weightUnit: 'lb', distUnit: 'mi', sprintUnit: 'yd', powerUnit: 'ft', theme: 'DEFAULT' }; }
@@ -245,8 +262,9 @@ export const SPRINT_DISTANCES = ['40yd Dash','100m','200m','400m','1 Mile'];
 // Returns { weightPR, repsPR } for strength, or { pr } for other types.
 
 export function getStrengthPRs(sets, exerciseName) {
+  const normKey = normalizeExName(exerciseName);
   const exSets = sets
-    .filter(s => s.ex === exerciseName && s.type === 'strength')
+    .filter(s => normalizeExName(s.ex) === normKey && s.type === 'strength')
     .sort((a, b) => a.id - b.id); // chronological
 
   let bestWeight = -Infinity;
@@ -284,8 +302,9 @@ export function getGenericPRs(sets, exerciseName, type) {
   // For non-strength: single metric PR (strictly greater than prior best)
   const met = PR_METRIC[type] || 'dist';
   const isTime = type === 'sprint';
+  const normKey = normalizeExName(exerciseName);
   const exSets = sets
-    .filter(s => s.ex === exerciseName && s.type === type)
+    .filter(s => normalizeExName(s.ex) === normKey && s.type === type)
     .sort((a, b) => a.id - b.id);
 
   let best = isTime ? Infinity : -Infinity;
@@ -302,8 +321,9 @@ export function getGenericPRs(sets, exerciseName, type) {
 
 // Best single-session volume for an exercise (strength + bodyweight only)
 export function getVolumePR(sets, exerciseName) {
+  const normKey = normalizeExName(exerciseName);
   const exSets = sets.filter(s =>
-    s.ex === exerciseName &&
+    normalizeExName(s.ex) === normKey &&
     (s.type === 'strength' || s.type === 'bodyweight')
   );
   if (!exSets.length) return null;
@@ -320,7 +340,8 @@ export function getVolumePR(sets, exerciseName) {
 
 // Backward-compatible single PR summary for the PR strip at top of History
 export function getPR(sets, exerciseName) {
-  const pts = sets.filter(s => s.ex === exerciseName);
+  const normKey = normalizeExName(exerciseName);
+  const pts = sets.filter(s => normalizeExName(s.ex) === normKey);
   if (!pts.length) return null;
   const type = pts[0].type;
 
