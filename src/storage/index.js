@@ -17,7 +17,12 @@ export function normalizeExName(name) {
     .replace(/^one[\s-]leg\b/i, 'SL')
     .toLowerCase()
     .replace(/\bhamstrings\b/g, 'hamstring')
-    .replace(/\bsquats\b/g, 'squat')
+    // Squat variant normalization — preserve modifier, collapse plural and compound spellings
+    .replace(/\bover[\s-]head\b/g, 'overhead')               // "over head" / "over-head" → "overhead"
+    .replace(/([a-z])-squats?\b/g, '$1 squat')               // "front-squat(s)" → "front squat"
+    .replace(/([a-z])squats?\b/g, (_, c) => c + ' squat')    // "frontsquat(s)" → "front squat"
+    .replace(/\bback[\s-]squats?\b/g, 'squat')               // "back squat(s)" → "squat"
+    .replace(/\bsquats\b/g, 'squat')                         // standalone "squats" → "squat"
     .replace(/\s+/g, ' ')
     .trim();
 }
