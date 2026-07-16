@@ -342,7 +342,7 @@ export default function WeekScreen({
       if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
-    const exIdx = allExercises.findIndex(e => e.name === exName);
+    const exIdx = allExercises.findIndex(e => e.name.toLowerCase() === exName.toLowerCase());
     if (exIdx !== -1) pickEx(exIdx, i);
   }
 
@@ -883,7 +883,7 @@ export default function WeekScreen({
                   const target  = parseInt(ex.sets) || 0;
                   const done    = sets.filter(s => s.date === selectedDate && s.ex === ex.name).length;
                   const checked = checkedItems.has(i) || done >= target;
-                  const exIdx   = allExercises.findIndex(e => e.name === ex.name);
+                  const exIdx   = allExercises.findIndex(e => e.name.toLowerCase() === ex.name.toLowerCase());
                   return (
                     <div
                       key={i}

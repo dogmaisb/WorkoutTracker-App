@@ -452,7 +452,7 @@ function mergeProgram(workouts) {
   const merged = [...workouts];
   PROGRAM_WORKOUTS.forEach(pw => {
     const idx = merged.findIndex(w => w.date === pw.date);
-    if (idx >= 0) merged[idx] = pw; else merged.push(pw);
+    if (idx < 0) merged.push(pw); // only fill gaps — never overwrite stored/imported data
   });
   return merged;
 }
