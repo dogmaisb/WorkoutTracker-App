@@ -16,6 +16,7 @@ export function normalizeExName(name) {
     .replace(/^one[\s-]arm\b/i, 'SA')
     .replace(/^one[\s-]leg\b/i, 'SL')
     .toLowerCase()
+    .replace(/\bhamstrings\b/g, 'hamstring')
     .replace(/\s+/g, ' ')
     .trim();
 }
