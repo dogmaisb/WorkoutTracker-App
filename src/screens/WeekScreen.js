@@ -484,7 +484,7 @@ export default function WeekScreen({
 
   const todayStr   = format(today, 'MMM d');
   const todaySets  = logExercise !== null
-    ? sets.filter(s => s.date === selectedDate && s.ex === curEx.name)
+    ? sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === curEx.name.toLowerCase())
     : [];
 
   // - Log Page -
@@ -849,7 +849,7 @@ export default function WeekScreen({
         {prescribed && (() => {
           const total = prescribed.exercises.length;
           const done  = prescribed.exercises.filter((ex, i) =>
-            checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex === ex.name).length >= (parseInt(ex.sets) || 0)
+            checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === ex.name.toLowerCase()).length >= (parseInt(ex.sets) || 0)
           ).length;
           if (done < total) return null;
           const MSGS = [
@@ -875,13 +875,13 @@ export default function WeekScreen({
           <>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7, marginTop:4 }}>
               <div className="section-label" style={{ margin:0 }}>{prescribed.name}</div>
-              <div style={{ fontSize:10, color:'#6a9a6a' }}>{prescribed.exercises.filter((ex, i) => checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex === ex.name).length >= (parseInt(ex.sets) || 0)).length}/{prescribed.exercises.length} done</div>
+              <div style={{ fontSize:10, color:'#6a9a6a' }}>{prescribed.exercises.filter((ex, i) => checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === ex.name.toLowerCase()).length >= (parseInt(ex.sets) || 0)).length}/{prescribed.exercises.length} done</div>
             </div>
             <div className="card" style={{ padding:'6px 10px', border:`1px solid ${theme.borderDefault}`, borderRadius:14 }}>
               {(() => {
                 const renderExRow = (ex, i) => {
                   const target  = parseInt(ex.sets) || 0;
-                  const done    = sets.filter(s => s.date === selectedDate && s.ex === ex.name).length;
+                  const done    = sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === ex.name.toLowerCase()).length;
                   const checked = checkedItems.has(i) || done >= target;
                   const exIdx   = allExercises.findIndex(e => e.name.toLowerCase() === ex.name.toLowerCase());
                   return (
@@ -1013,7 +1013,7 @@ export default function WeekScreen({
       {!showMonth && (<>
       <div style={{ flexShrink:0, background:theme.bgSurface, padding:'6px 14px 8px', margin:'0 8px 12px', borderRadius:14, border:`1px solid ${theme.borderDefault}` }}>
         {(() => {
-          const qlDone   = sets.filter(s => s.date === selectedDate && s.ex === curEx.name).length;
+          const qlDone   = sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === curEx.name.toLowerCase()).length;
           const qlTarget = prescribedCurEx?.sets ?? null;
           const qlLeft   = qlTarget != null ? Math.max(0, qlTarget - qlDone) : null;
           const setLabel = qlDone > 0 && qlLeft != null

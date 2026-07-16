@@ -139,10 +139,10 @@ export function loadExercises() {
   try {
     const stored = JSON.parse(localStorage.getItem(EXER_KEY));
     if (!stored) return DEFAULT_EXERCISES.map(e => ({ ...e, origin: 'default' }));
-    const defaultMap = new Map(DEFAULT_EXERCISES.map(e => [e.name, e]));
+    const defaultMap = new Map(DEFAULT_EXERCISES.map(e => [e.name.toLowerCase(), e]));
     // Backfill origin and sync type from DEFAULT_EXERCISES (handles type migrations)
     return stored.map(e => {
-      const def = defaultMap.get(e.name);
+      const def = defaultMap.get(e.name.toLowerCase());
       const origin = e.origin || (def ? 'default' : 'coach');
       const type = def ? def.type : e.type;
       return { ...e, origin, type };
