@@ -256,7 +256,7 @@ export default function WeekScreen({
   const [sets,         setSets]         = useState(loadSets());
   const [customExercises, setCustomExercises] = useState(() => loadExercises());
   const [flash,        setFlash]        = useState(false);
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'MMM d'));
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'MMM d yyyy'));
   const [checkedItems, setCheckedItems] = useState(new Set());
   const [logExercise,  setLogExercise]  = useState(null); // { exIdx, pIdx }
   const [selectedPIdx, setSelectedPIdx] = useState(null);
@@ -298,13 +298,15 @@ export default function WeekScreen({
     }
   }, [logExercise, selectedDate, curExIdx]);
 
+  // Strip trailing year so old "MMM d" sets match new "MMM d yyyy" selectedDate
+  const stripYear = d => String(d).replace(/\s+\d{4}$/, '').trim();
+
   // Auto-populate quick log fields from last set logged today for this exercise
   useEffect(() => {
     if (editingSetId !== null || !curEx) return;
-    const dateStr = format(selectedDate, 'MMM d');
     const todaySets = sets.filter(s =>
       s.ex.toLowerCase() === curEx.name.toLowerCase() &&
-      s.date === dateStr
+      stripYear(s.date) === stripYear(selectedDate)
     );
     if (todaySets.length > 0) {
       const last = todaySets[todaySets.length - 1];
@@ -331,7 +333,8 @@ export default function WeekScreen({
   const weekDays  = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   function isDone(day) {
-    return sets.some(s => s.date === format(day, 'MMM d'));
+    const ds = format(day, 'MMM d yyyy');
+    return sets.some(s => stripYear(s.date) === stripYear(ds));
   }
 
   const prescribed = getPrescribedForDate(selectedDate);
@@ -348,7 +351,7 @@ export default function WeekScreen({
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const fmtDay = d => `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+  const fmtDay = d => `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()} ${d.getFullYear()}`;
 
   function getMonthGrid(year, month) {
     const first = new Date(year, month, 1);
@@ -482,9 +485,9 @@ export default function WeekScreen({
     doSave();
   }
 
-  const todayStr   = format(today, 'MMM d');
+  const todayStr   = format(today, 'MMM d yyyy');
   const todaySets  = logExercise !== null
-    ? sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === curEx.name.toLowerCase())
+    ? sets.filter(s => stripYear(s.date) === stripYear(selectedDate) && s.ex.toLowerCase() === curEx.name.toLowerCase())
     : [];
 
   // - Log Page -
@@ -739,7 +742,7 @@ export default function WeekScreen({
           >‹</button>
           <div className="week-row" style={{ flex:1, margin:0 }}>
           {weekDays.map((day, i) => {
-            const dateStr    = format(day, 'MMM d');
+            const dateStr    = format(day, 'MMM d yyyy');
             const isToday    = dateStr === todayStr;
             const isSelected = dateStr === selectedDate;
             const logged     = isDone(day);
@@ -802,7 +805,7 @@ export default function WeekScreen({
                   const ds       = fmtDay(day);
                   const isToday  = ds === todayFmt;
                   const isSel    = ds === selectedDate;
-                  const logged   = sets.some(s => s.date === ds);
+                  const logged   = sets.some(s => stripYear(s.date) === stripYear(ds));
                   const prescribed = getPrescribedForDate(ds) !== null;
                   return (
                     <div
@@ -849,7 +852,7 @@ export default function WeekScreen({
         {prescribed && (() => {
           const total = prescribed.exercises.length;
           const done  = prescribed.exercises.filter((ex, i) =>
-            checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === ex.name.toLowerCase()).length >= (parseInt(ex.sets) || 0)
+            checkedItems.has(i) || sets.filter(s => stripYear(s.date) === stripYear(selectedDate) && s.ex.toLowerCase() === ex.name.toLowerCase()).length >= (parseInt(ex.sets) || 0)
           ).length;
           if (done < total) return null;
           const MSGS = [
@@ -875,13 +878,13 @@ export default function WeekScreen({
           <>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7, marginTop:4 }}>
               <div className="section-label" style={{ margin:0 }}>{prescribed.name}</div>
-              <div style={{ fontSize:10, color:'#6a9a6a' }}>{prescribed.exercises.filter((ex, i) => checkedItems.has(i) || sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === ex.name.toLowerCase()).length >= (parseInt(ex.sets) || 0)).length}/{prescribed.exercises.length} done</div>
+              <div style={{ fontSize:10, color:'#6a9a6a' }}>{prescribed.exercises.filter((ex, i) => checkedItems.has(i) || sets.filter(s => stripYear(s.date) === stripYear(selectedDate) && s.ex.toLowerCase() === ex.name.toLowerCase()).length >= (parseInt(ex.sets) || 0)).length}/{prescribed.exercises.length} done</div>
             </div>
             <div className="card" style={{ padding:'6px 10px', border:`1px solid ${theme.borderDefault}`, borderRadius:14 }}>
               {(() => {
                 const renderExRow = (ex, i) => {
                   const target  = parseInt(ex.sets) || 0;
-                  const done    = sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === ex.name.toLowerCase()).length;
+                  const done    = sets.filter(s => stripYear(s.date) === stripYear(selectedDate) && s.ex.toLowerCase() === ex.name.toLowerCase()).length;
                   const checked = checkedItems.has(i) || done >= target;
                   const exIdx   = allExercises.findIndex(e => e.name.toLowerCase() === ex.name.toLowerCase());
                   return (
@@ -1013,7 +1016,7 @@ export default function WeekScreen({
       {!showMonth && (<>
       <div style={{ flexShrink:0, background:theme.bgSurface, padding:'6px 14px 8px', margin:'0 8px 12px', borderRadius:14, border:`1px solid ${theme.borderDefault}` }}>
         {(() => {
-          const qlDone   = sets.filter(s => s.date === selectedDate && s.ex.toLowerCase() === curEx.name.toLowerCase()).length;
+          const qlDone   = sets.filter(s => stripYear(s.date) === stripYear(selectedDate) && s.ex.toLowerCase() === curEx.name.toLowerCase()).length;
           const qlTarget = prescribedCurEx?.sets ?? null;
           const qlLeft   = qlTarget != null ? Math.max(0, qlTarget - qlDone) : null;
           const setLabel = qlDone > 0 && qlLeft != null
