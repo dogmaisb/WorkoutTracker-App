@@ -127,8 +127,9 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
         const existing = loadPrescribed();
         const merged   = [...existing];
         data.workouts.forEach(w => {
-          const transformed = { ...w, exercises: buildExerciseList(w) };
-          const idx = merged.findIndex(x => x.date === w.date);
+          const date = w.date ? w.date.replace(/\s+\d{4}$/, '').trim() : w.date;
+          const transformed = { ...w, date, exercises: buildExerciseList(w) };
+          const idx = merged.findIndex(x => x.date === date);
           if (idx >= 0) merged[idx] = transformed; else merged.push(transformed);
         });
         savePrescribed(merged);
