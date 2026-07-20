@@ -1096,7 +1096,7 @@ export default function WeekScreen({
         ))}
 
         <div style={{ display:'flex', gap:8, marginTop:4 }}>
-          <button className="notes-btn" style={{ flex:1, marginTop:0 }} onClick={onOpenNotes}>
+          <button className="notes-btn" style={{ flex:1, marginTop:0, minWidth:0, overflow:'hidden' }} onClick={onOpenNotes}>
             📝
                           <span className="notes-preview" style={{ color: noteText ? '#9ae0b0' : undefined }}>{noteText || 'Add a note...'}</span>
             <span style={{ color:'#3a5a3a', marginLeft:'auto' }}>›</span>
