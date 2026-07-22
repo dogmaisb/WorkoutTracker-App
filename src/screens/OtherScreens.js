@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  savePrescribed, loadPrescribed, loadExercises, saveExercises, loadSettings, saveSettings,
+  savePrescribed, loadPrescribed, loadSets, loadExercises, saveExercises, loadSettings, saveSettings,
   addCustomExercise, updateCustomExercise, deleteCustomExercise, buildExerciseList,
 } from '../storage';
 import { useTheme } from '../ThemeContext';
@@ -124,12 +124,19 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
           return;
         }
 
-        const existing = loadPrescribed();
-        const merged   = [...existing];
+        const existing  = loadPrescribed();
+        const allSets   = loadSets();
+        const stripYear = d => String(d).replace(/\s+\d{4}$/, '').trim();
+        const merged    = [...existing];
         data.workouts.forEach(w => {
           const transformed = { ...w, exercises: buildExerciseList(w) };
           const idx = merged.findIndex(x => x.date === w.date);
-          if (idx >= 0) merged[idx] = transformed; else merged.push(transformed);
+          const hasLoggedSets = allSets.some(s => stripYear(s.date) === stripYear(w.date));
+          if (idx >= 0) {
+            if (!hasLoggedSets) merged[idx] = transformed; // skip dates with logged sets
+          } else {
+            merged.push(transformed);
+          }
         });
         savePrescribed(merged);
 
