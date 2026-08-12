@@ -26,6 +26,24 @@ const HUNTER_OVERLAYS = {
   settings: 'rgba(6,8,2,0.70)',
 };
 
+const CHRISTMAS_OVERLAYS = {
+  week:     'rgba(8,0,2,0.68)',
+  progress: 'rgba(8,0,2,0.68)',
+  history:  'rgba(8,0,2,0.66)',
+  diet:     'rgba(8,0,2,0.68)',
+  timers:   'rgba(8,0,2,0.70)',
+  settings: 'rgba(8,0,2,0.70)',
+};
+
+const HALLOWEEN_OVERLAYS = {
+  week:     'rgba(4,2,8,0.68)',
+  progress: 'rgba(4,2,8,0.68)',
+  history:  'rgba(4,2,8,0.66)',
+  diet:     'rgba(4,2,8,0.68)',
+  timers:   'rgba(4,2,8,0.70)',
+  settings: 'rgba(4,2,8,0.70)',
+};
+
 const EGYPTIAN_OVERLAYS = {
   week:     'rgba(20,12,2,0.65)',
   progress: 'rgba(20,12,2,0.65)',
@@ -42,6 +60,8 @@ export function useBackground(page) {
   if (!img) return {};
   const overlayMap = themeName === 'AMERICAN' ? AMERICAN_OVERLAYS
     : themeName === 'HUNTER' ? HUNTER_OVERLAYS
+    : themeName === 'HALLOWEEN' ? HALLOWEEN_OVERLAYS
+    : themeName === 'CHRISTMAS' ? CHRISTMAS_OVERLAYS
     : themeName === 'EGYPTIAN' ? EGYPTIAN_OVERLAYS
     : OVERLAYS;
   const overlay = overlayMap[page] || 'rgba(0,0,0,0.70)';

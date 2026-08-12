@@ -12,6 +12,20 @@ import hunterSettings from './settings/Grizzlyback.png';
 import hunterTimers   from './timers/Grizzlyback.png';
 import hunterDiet     from './diet/Grizzlyback.png';
 
+import xmasWeek     from './week/XmasClaus.png';
+import xmasProgress from './progress/XmasClaus.png';
+import xmasHistory  from './history/XmasClaus.png';
+import xmasSettings from './settings/XmasClaus.png';
+import xmasTimers   from './timers/XmasClaus.png';
+import xmasDiet     from './diet/XmasClaus.png';
+
+import halloweenWeek     from './week/Halloween.png';
+import halloweenProgress from './progress/Halloween.png';
+import halloweenHistory  from './history/Halloween.png';
+import halloweenSettings from './settings/Halloween.png';
+import halloweenTimers   from './timers/Halloween.png';
+import halloweenDiet     from './diet/Halloween.png';
+
 import egyptWeek     from './week/EgyptianAnubis.png';
 import egyptProgress from './progress/EgyptianAnubis.png';
 import egyptHistory  from './history/EgyptianAnubis.png';
@@ -44,6 +58,22 @@ export const themeBackgrounds = {
     settings: hunterSettings,
     timers:   hunterTimers,
     diet:     hunterDiet,
+  },
+  CHRISTMAS: {
+    week:     xmasWeek,
+    progress: xmasProgress,
+    history:  xmasHistory,
+    settings: xmasSettings,
+    timers:   xmasTimers,
+    diet:     xmasDiet,
+  },
+  HALLOWEEN: {
+    week:     halloweenWeek,
+    progress: halloweenProgress,
+    history:  halloweenHistory,
+    settings: halloweenSettings,
+    timers:   halloweenTimers,
+    diet:     halloweenDiet,
   },
   EGYPTIAN: {
     week:     egyptWeek,
