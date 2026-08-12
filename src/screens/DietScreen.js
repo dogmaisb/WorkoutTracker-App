@@ -984,7 +984,7 @@ export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
         <div>
-          <h1 style={{ margin:0 }}>Diet</h1>
+          <h1 style={{ margin:0, textShadow:theme.headingGlow }}>Diet</h1>
         </div>
         <button onClick={() => setShowCal(s => !s)} style={{
           background:'none', border:'none', cursor:'pointer', fontSize:18, padding:2,

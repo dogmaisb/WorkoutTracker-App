@@ -352,8 +352,9 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
 
   useEffect(() => { setSets(loadSets()); }, [stateVersion]);
 
+  const STRETCH_TYPES = new Set(['stretch-static', 'stretch-dynamic']);
   const _normMapP = new Map();
-  for (const ex of [...BASE_EX, ...sets.map(s => s.ex)]) {
+  for (const ex of [...BASE_EX, ...sets.filter(s => !STRETCH_TYPES.has(s.type)).map(s => s.ex)]) {
     const k = normalizeExName(ex);
     if (!_normMapP.has(k)) _normMapP.set(k, ex);
   }
@@ -570,7 +571,7 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
   return (
     <div className="screen progress-page" style={bgStyle}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
-      <div className="top-bar"><h1>Progress</h1></div>
+      <div className="top-bar"><h1 style={{ textShadow:theme.headingGlow }}>Progress</h1></div>
       <div className="scroll">
 
         {/* Search */}

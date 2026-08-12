@@ -164,12 +164,12 @@ export function saveExercises(exs) {
 // ── Custom exercise library ─────────────────────────────────────────────────
 // Custom exercises are user-added/edited/deleted only. Default and coach-imported
 // exercises are never exposed for deletion through this API.
-export function addCustomExercise({ name, type }) {
+export function addCustomExercise({ name, type, origin = 'custom' }) {
   const exs = loadExercises();
   if (exs.some(e => e.name.toLowerCase() === name.toLowerCase())) {
     throw new Error('An exercise with this name already exists');
   }
-  const updated = [...exs, { name, type, origin: 'custom' }];
+  const updated = [...exs, { name, type, origin }];
   saveExercises(updated);
   return updated;
 }
@@ -177,7 +177,7 @@ export function addCustomExercise({ name, type }) {
 export function updateCustomExercise(origName, { name, type }) {
   const exs = loadExercises();
   const target = exs.find(e => e.name === origName);
-  if (!target || target.origin !== 'custom') throw new Error('Only custom exercises can be edited');
+  if (!target || !['custom', 'user'].includes(target.origin)) throw new Error('Only custom exercises can be edited');
   const updated = exs.map(e => e.name === origName ? { ...e, name, type } : e);
   saveExercises(updated);
   return updated;
@@ -186,7 +186,7 @@ export function updateCustomExercise(origName, { name, type }) {
 export function deleteCustomExercise(name) {
   const exs = loadExercises();
   const target = exs.find(e => e.name === name);
-  if (!target || target.origin !== 'custom') throw new Error('Only custom exercises can be deleted');
+  if (!target || !['custom', 'user'].includes(target.origin)) throw new Error('Only custom exercises can be deleted');
   const updated = exs.filter(e => e.name !== name);
   saveExercises(updated);
   return updated;
@@ -225,17 +225,27 @@ export const FIELD_DEFS = {
     { fields: [{ id:'dur',label:'Duration (sec)',ph:'60' },{ id:'rest',label:'Rest (sec)',ph:'60' }] },
     { fields: [{ id:'rpe',label:'RPE',ph:'7' }] },
   ],
+  'stretch-static': [
+    { fields: [{ id:'dur',label:'Hold (sec)',ph:'30' },{ id:'rest',label:'Rest (sec)',ph:'15' }] },
+    { fields: [{ id:'rpe',label:'RPE',ph:'6' }] },
+  ],
+  'stretch-dynamic': [
+    { fields: [{ id:'reps',label:'Reps',ph:'10' },{ id:'rest',label:'Rest (sec)',ph:'15' }] },
+    { fields: [{ id:'rpe',label:'RPE',ph:'6' }] },
+  ],
 };
 
 export const METRIC_DEFS = {
-  strength:   ['weight','reps','volume','rpe'],
-  bodyweight: ['reps','added','volume','rpe'],
-  cardio:     ['dist','dur','hr'],
-  sprint:     ['stime'],
-  cycling:    ['dist','dur','speed','power'],
-  jumprope:   ['reps','dur','rpe'],
-  power:      ['pdist','reps','weight'],
-  timed:      ['dur','rpe'],
+  strength:          ['weight','reps','volume','rpe'],
+  bodyweight:        ['reps','added','volume','rpe'],
+  cardio:            ['dist','dur','hr'],
+  sprint:            ['stime'],
+  cycling:           ['dist','dur','speed','power'],
+  jumprope:          ['reps','dur','rpe'],
+  power:             ['pdist','reps','weight'],
+  timed:             ['dur','rpe'],
+  'stretch-static':  ['dur','rpe'],
+  'stretch-dynamic': ['reps','rpe'],
 };
 
 export const METRIC_LABELS = {

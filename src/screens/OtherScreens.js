@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  savePrescribed, loadPrescribed, loadSets, loadExercises, saveExercises, loadSettings, saveSettings,
+  savePrescribed, loadPrescribed, loadSets, saveSets, loadExercises, saveExercises, loadSettings, saveSettings,
   addCustomExercise, updateCustomExercise, deleteCustomExercise, buildExerciseList,
 } from '../storage';
 import { useTheme } from '../ThemeContext';
@@ -86,7 +86,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
 
     if (data.workouts.length === 0) { errors.push('File contains no workouts'); return { valid: false, errors, warnings }; }
 
-    const VALID_TYPES = new Set(['strength','bodyweight','cardio','sprint','cycling','jumprope','power','timed']);
+    const VALID_TYPES = new Set(['strength','bodyweight','cardio','sprint','cycling','jumprope','power','timed','stretch-static','stretch-dynamic']);
     let missingDates = 0, missingNames = 0, missingReps = 0, badTypes = 0, totalEx = 0;
 
     data.workouts.forEach(w => {
@@ -174,7 +174,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
     <div className="screen week-page" style={bgStyle}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ position:'relative' }}>
-        <h1 style={{ margin:0 }}>Settings</h1>
+        <h1 style={{ margin:0, textShadow:theme.headingGlow }}>Settings</h1>
       </div>
       <div className="scroll">
 
@@ -249,7 +249,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
             onMouseOut={e  => e.currentTarget.style.borderColor=theme.borderDefault}>
             <span style={{ fontSize:18 }}>📂</span>
             <div>
-              <div style={{ fontSize:13, fontWeight:700, color:theme.accentGreen }}>Import Coach JSON</div>
+              <div style={{ fontSize:13, fontWeight:700, color:theme.accentGreen }}>Import Coach Program</div>
               <div style={{ fontSize:11, color:theme.textMuted, marginTop:2 }}>Tap to select a .json file from your coach</div>
             </div>
             <input type="file" accept=".json" style={{ display:'none' }} onChange={handleImportJSON} />
@@ -436,17 +436,20 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
 }
 
 const EX_TYPES = [
-  { key:'strength',   label:'Strength' },
-  { key:'bodyweight', label:'Bodyweight' },
-  { key:'cardio',     label:'Cardio' },
-  { key:'sprint',     label:'Sprint' },
-  { key:'cycling',    label:'Cycling' },
-  { key:'jumprope',   label:'Jump Rope' },
+  { key:'strength',        label:'Strength' },
+  { key:'bodyweight',      label:'Bodyweight' },
+  { key:'cardio',          label:'Cardio' },
+  { key:'sprint',          label:'Sprint' },
+  { key:'cycling',         label:'Cycling' },
+  { key:'jumprope',        label:'Jump Rope' },
+  { key:'stretch-static',  label:'Stretch (Static)' },
+  { key:'stretch-dynamic', label:'Stretch (Dynamic)' },
 ];
 const ORIGIN_BADGE = {
   default: { label:'Built-in', colorKey:'textMuted',    bgKey:'bgCardAlt' },
   coach:   { label:'Coach',    colorKey:'accentGreen',  bgKey:'accentGreenDeep' },
   custom:  { label:'Custom',   colorKey:'accentPurple', bgKey:'dietPurpleBg' },
+  user:    { label:'Day Add',  colorKey:'accentBlue',   bgKey:'bgCardAlt' },
 };
 
 export function ExerciseLibraryScreen({ onBack }) {
@@ -457,8 +460,12 @@ export function ExerciseLibraryScreen({ onBack }) {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [error,     setError]     = useState('');
 
-  const filtered = exercises.filter(e => e.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = exercises.filter(e => e.origin !== 'user' && e.name.toLowerCase().includes(search.toLowerCase()));
+  const userExercises = exercises.filter(e => e.origin === 'user');
   const customCount = exercises.filter(e => e.origin === 'custom').length;
+
+  const [pendingMerge, setPendingMerge] = useState(null); // { from: name } — pick merge target next
+  const [mergeTarget,  setMergeTarget]  = useState(null); // { from, into } — confirm step
 
   function openNew()  { setError(''); setEditing({ name:'', type:'strength' }); }
   function openEdit(e){ setError(''); setEditing({ origName: e.name, name: e.name, type: e.type }); }
@@ -485,12 +492,24 @@ export function ExerciseLibraryScreen({ onBack }) {
     setPendingDelete(null);
   }
 
+  function handleMerge({ from, into }) {
+    // Rewrite all sets logged under `from` to `into`
+    const sets = loadSets();
+    const rewritten = sets.map(s => s.ex.toLowerCase() === from.toLowerCase() ? { ...s, ex: into } : s);
+    saveSets(rewritten);
+    // Remove the `from` exercise entry
+    try { deleteCustomExercise(from); } catch {}
+    setExercises(loadExercises());
+    setMergeTarget(null);
+    setPendingMerge(null);
+  }
+
   return (
     <div className="screen week-page">
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', alignItems:'center', gap:10 }}>
         <button className="back-btn" onClick={onBack}>← Back</button>
-        <h1 style={{ margin:0 }}>Exercise Library</h1>
+        <h1 style={{ margin:0, textShadow:theme.headingGlow }}>Exercise Library</h1>
       </div>
       <div className="scroll">
 
@@ -541,6 +560,42 @@ export function ExerciseLibraryScreen({ onBack }) {
           {!filtered.length && <div className="empty" style={{ padding:'16px 0' }}>No exercises match your search</div>}
         </div>
 
+        {userExercises.length > 0 && (
+          <>
+            <div style={{ fontSize:11, fontWeight:700, color:theme.accentBlue, textTransform:'uppercase', letterSpacing:'.07em', margin:'18px 0 6px' }}>
+              User Additions
+            </div>
+            <div style={{ fontSize:11, color:theme.textMuted, marginBottom:8, lineHeight:1.5 }}>
+              Exercises you added to specific days. Delete to remove, or merge two into one to consolidate history.
+            </div>
+            <div className="card" style={{ padding:0 }}>
+              {userExercises.map((ex, i) => (
+                <div key={ex.name} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px',
+                  borderBottom: i < userExercises.length - 1 ? `1px solid ${theme.borderMuted}` : 'none' }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:theme.textHeading, overflow:'hidden', textOverflow:'ellipsis' }}>{ex.name}</div>
+                    <div style={{ display:'flex', gap:6, marginTop:3, alignItems:'center' }}>
+                      <span style={{ fontSize:9, fontWeight:700, color:theme.accentBlue, background:theme.bgCardAlt,
+                        border:`1px solid ${theme.accentBlue}`, borderRadius:5, padding:'1px 6px' }}>Day Add</span>
+                      <span style={{ fontSize:10, color:theme.textMuted }}>{EX_TYPES.find(t => t.key === ex.type)?.label || ex.type}</span>
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {userExercises.length > 1 && (
+                      <button onClick={() => { setPendingMerge({ from: ex.name }); setMergeTarget(null); }}
+                        style={{ background:'none', border:`1px solid ${theme.borderDefault}`, borderRadius:7,
+                          color:theme.accentBlueLight, fontSize:11, fontWeight:700, padding:'5px 8px', cursor:'pointer' }}>Merge</button>
+                    )}
+                    <button onClick={() => setPendingDelete(ex.name)}
+                      style={{ background:'none', border:'1px solid #5a1a1a', borderRadius:7,
+                        color:'#e05050', fontSize:14, padding:'5px 9px', cursor:'pointer' }}>🗑</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         <div style={{ height:20 }} />
       </div>
 
@@ -585,6 +640,63 @@ export function ExerciseLibraryScreen({ onBack }) {
                 flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
                 background:theme.accentBlueDeep, border:`1px solid ${theme.accentBlueDeep}`, color:theme.accentBlueLight, fontSize:13, fontWeight:700,
               }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Merge — pick target */}
+      {pendingMerge && !mergeTarget && (
+        <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:50, borderRadius:'inherit' }}>
+          <div style={{ background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:16,
+            padding:'20px 18px', margin:'0 20px', width:'100%', maxWidth:320 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:theme.textPrimary, marginBottom:4 }}>Merge "{pendingMerge.from}"</div>
+            <div style={{ fontSize:11, color:theme.textMuted, marginBottom:14, lineHeight:1.5 }}>
+              Pick the exercise to merge into. All history from "{pendingMerge.from}" moves to the chosen exercise.
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
+              {userExercises.filter(e => e.name !== pendingMerge.from).map(e => (
+                <button key={e.name} onClick={() => setMergeTarget({ from: pendingMerge.from, into: e.name })}
+                  style={{ background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:9,
+                    color:theme.textPrimary, fontSize:13, padding:'10px 12px', cursor:'pointer', textAlign:'left', fontWeight:600 }}>
+                  {e.name}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setPendingMerge(null)}
+              style={{ width:'100%', padding:'11px', borderRadius:10, cursor:'pointer',
+                background:'transparent', border:`1px solid ${theme.borderDefault}`, color:theme.textMuted, fontSize:13 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Merge — confirm */}
+      {mergeTarget && (
+        <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:50, borderRadius:'inherit' }}>
+          <div style={{ background:theme.bgCardAlt, border:'1px solid #5a1a1a', borderRadius:16,
+            padding:'24px 20px', margin:'0 20px', textAlign:'center' }}>
+            <div style={{ fontSize:28, marginBottom:10 }}>🔀</div>
+            <div style={{ fontSize:15, fontWeight:700, color:theme.textPrimary, marginBottom:8 }}>Confirm Merge</div>
+            <div style={{ fontSize:12, color:theme.textMuted, marginBottom:20, lineHeight:1.6 }}>
+              All sets logged under <strong style={{ color:theme.textPrimary }}>"{mergeTarget.from}"</strong> will be
+              moved to <strong style={{ color:theme.textPrimary }}>"{mergeTarget.into}"</strong>.<br />
+              "{mergeTarget.from}" will be removed. This can't be undone.
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setMergeTarget(null)}
+                style={{ flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                  background:'transparent', border:`1px solid ${theme.borderDefault}`, color:theme.textMuted, fontSize:13 }}>
+                Back
+              </button>
+              <button onClick={() => handleMerge(mergeTarget)}
+                style={{ flex:1, padding:'11px', borderRadius:10, cursor:'pointer',
+                  background:'#5a1a1a', border:'1px solid #9e1d1d', color:'#ffd0d0', fontSize:13, fontWeight:700 }}>
+                Merge
+              </button>
             </div>
           </div>
         </div>

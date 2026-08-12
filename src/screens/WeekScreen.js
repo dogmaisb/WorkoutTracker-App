@@ -1,7 +1,7 @@
 import { useBackground } from '../useBackground';
 import React, { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
-import { loadSets, addSet, updateSet, deleteSet, FIELD_DEFS, setMainValue, getPrescribedForDate, loadExercises } from '../storage';
+import { loadSets, addSet, updateSet, deleteSet, FIELD_DEFS, setMainValue, getPrescribedForDate, loadPrescribed, savePrescribed, loadExercises, addCustomExercise } from '../storage';
 import { useTheme } from '../ThemeContext';
 
 const REST_QUOTES = [
@@ -264,6 +264,9 @@ export default function WeekScreen({
   const [editingSetId, setEditingSetId] = useState(null);
   const [eachSide,     setEachSide]     = useState(false);
   const [showMonth,    setShowMonth]    = useState(false);
+  const [showAddEx,    setShowAddEx]    = useState(false);
+  const [addExName,    setAddExName]    = useState('');
+  const [prescribedV,  setPrescribedV]  = useState(0);
   const [monthYear,    setMonthYear]    = useState({ year: new Date().getFullYear(), month: new Date().getMonth() });
   const [weekAnchor,   setWeekAnchor]   = useState(new Date());
 
@@ -337,7 +340,31 @@ export default function WeekScreen({
     return sets.some(s => stripYear(s.date) === stripYear(ds));
   }
 
-  const prescribed = getPrescribedForDate(selectedDate);
+  const prescribed = React.useMemo(() => getPrescribedForDate(selectedDate), [selectedDate, stateVersion, prescribedV]);
+
+  function confirmAddEx() {
+    const name = addExName.trim();
+    if (!name || !prescribed) return;
+    const found = allExercises.find(e => e.name.toLowerCase() === name.toLowerCase());
+    const exName = found ? found.name : name;
+    const exType = found?.type || 'strength';
+    if (!found) {
+      try { addCustomExercise({ name: exName, type: exType, origin: 'user' }); } catch {}
+    }
+    setCustomExercises(loadExercises());
+    const newEx = { name: exName, sets: 1, reps: '—', type: exType, userAdded: true };
+    const allPrescribed = loadPrescribed();
+    const idx = allPrescribed.findIndex(w => w.date === selectedDate);
+    if (idx >= 0) {
+      const prev = allPrescribed[idx];
+      const userAddedNames = [...new Set([...(prev.userAddedNames || []), exName])];
+      allPrescribed[idx] = { ...prev, exercises: [...(prev.exercises || []), newEx], userAddedNames };
+      savePrescribed(allPrescribed);
+    }
+    setShowAddEx(false);
+    setAddExName('');
+    setPrescribedV(v => v + 1);
+  }
 
   function toggleCheck(i, exName) {
     setCheckedItems(prev => {
@@ -397,13 +424,14 @@ export default function WeekScreen({
 
   function setVal(id, val) { setFieldVals(p => ({ ...p, [id]: val })); }
 
-  function fmtReps(r, exName) {
+  function fmtReps(r, exName, exType) {
     if (r == null) return '—';
     const s = String(r).trim().toLowerCase();
     if (s === 'amrap') return 'AMRAP';
     const m = s.match(/^(\d+)\s*each$/) || s.match(/^(\d+)e$/);
     if (m) return m[1] + 'e';
     if (exName && /^s[la]\b/i.test(String(exName).trim()) && /^\d+$/.test(s)) return s + 'e';
+    if (exType === 'stretch-static' && /^\d+$/.test(s)) return s + 's';
     return r;
   }
 
@@ -712,7 +740,7 @@ export default function WeekScreen({
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
         <div>
-          <h1 style={{ margin:0 }}>My Workouts</h1>
+          <h1 style={{ margin:0, textShadow:theme.headingGlow }}>My Workouts</h1>
         </div>
         <button
           onClick={() => setShowMonth(m => !m)}
@@ -917,6 +945,30 @@ export default function WeekScreen({
                         </div>
                       </div>
                       <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                        {((prescribed.userAddedNames || []).some(n => n.toLowerCase() === ex.name.toLowerCase()) ||
+                          ex.userAdded) && (
+                          <span
+                            style={{ fontSize:12, cursor:'pointer', padding:'0 2px', lineHeight:1, opacity:0.8 }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              const allPrescribed = loadPrescribed();
+                              const wIdx = allPrescribed.findIndex(w => w.date === selectedDate);
+                              if (wIdx >= 0) {
+                                const w = allPrescribed[wIdx];
+                                allPrescribed[wIdx] = {
+                                  ...w,
+                                  exercises: w.exercises.filter((_, ei) => ei !== i),
+                                  userAddedNames: (w.userAddedNames || []).filter(n => n.toLowerCase() !== ex.name.toLowerCase()),
+                                };
+                                savePrescribed(allPrescribed);
+                              }
+                              setCurExIdx(0);
+                              setSelectedPIdx(null);
+                              setLogExercise(null);
+                              setPrescribedV(v => v + 1);
+                            }}
+                          >🗑</span>
+                        )}
                         {(() => {
                           const left = Math.max(0, target - done);
                           return (
@@ -926,14 +978,14 @@ export default function WeekScreen({
                               )}
                               <span className="badge">
                                 {checked ? (
-                                  <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}×{fmtReps(ex.reps, ex.name)}</span>
+                                  <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}×{fmtReps(ex.reps, ex.name, ex.type)}</span>
                                 ) : done === 0 ? (
-                                  <>{target}×{fmtReps(ex.reps, ex.name)}</>
+                                  <>{target}×{fmtReps(ex.reps, ex.name, ex.type)}</>
                                 ) : (
                                   <>
                                     <span style={{ textDecoration:'line-through', opacity:0.45 }}>{target}</span>
                                     <span style={{ color:'#ffb060', marginLeft:3 }}>{left}</span>
-                                    ×{fmtReps(ex.reps, ex.name)}
+                                    ×{fmtReps(ex.reps, ex.name, ex.type)}
                                   </>
                                 )}
                               </span>
@@ -1012,8 +1064,8 @@ export default function WeekScreen({
 
       </div>
 
-      {/* Quick-log panel  anchored to bottom, hidden in month view */}
-      {!showMonth && (<>
+      {/* Quick-log panel  anchored to bottom, hidden in month view and on days without a prescribed workout */}
+      {!showMonth && prescribed && (<>
       <div style={{ flexShrink:0, background:theme.bgSurface, padding:'6px 14px 8px', margin:'0 8px 12px', borderRadius:14, border:`1px solid ${theme.borderDefault}` }}>
         {(() => {
           const qlDone   = sets.filter(s => stripYear(s.date) === stripYear(selectedDate) && s.ex.toLowerCase() === curEx.name.toLowerCase()).length;
@@ -1031,8 +1083,58 @@ export default function WeekScreen({
                     · {setLabel}
                   </span>
                 )}
+                {prescribed && (
+                  <button
+                    onClick={() => { setShowAddEx(v => !v); setAddExName(''); }}
+                    style={{ background:'none', border:`1px solid ${theme.borderDefault}`, borderRadius:5, color:theme.textSecondary, fontSize:13, lineHeight:1, width:18, height:18, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', padding:0, marginLeft:2 }}
+                    title="Add exercise to today"
+                  >+</button>
+                )}
               </div>
               <span style={{ fontSize:11, fontWeight:700, color:theme.accentGreen }}>{curEx.name}</span>
+            </div>
+          );
+        })()}
+
+        {showAddEx && prescribed && (() => {
+          const suggestionOrder = ['default', 'coach', 'custom', 'user'];
+          const suggestions = addExName.trim().length > 0
+            ? allExercises
+                .filter(e => e.name.toLowerCase().includes(addExName.trim().toLowerCase()))
+                .sort((a, b) => suggestionOrder.indexOf(a.origin) - suggestionOrder.indexOf(b.origin))
+                .slice(0, 6)
+            : [];
+          return (
+            <div style={{ marginBottom:8 }}>
+              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                <input
+                  autoFocus
+                  value={addExName}
+                  onChange={e => setAddExName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') confirmAddEx();
+                    if (e.key === 'Escape') { setShowAddEx(false); setAddExName(''); }
+                  }}
+                  placeholder="Exercise name…"
+                  style={{ flex:1, background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:8, color:theme.textPrimary, fontSize:12, padding:'5px 8px', outline:'none' }}
+                />
+                <button
+                  onClick={confirmAddEx}
+                  style={{ background:theme.accentGreen, border:'none', borderRadius:8, color:'#000', fontSize:11, fontWeight:700, padding:'5px 10px', cursor:'pointer' }}
+                >Add</button>
+              </div>
+              {suggestions.length > 0 && (
+                <div style={{ background:theme.bgCardAlt, border:`1px solid ${theme.borderDefault}`, borderRadius:8, marginTop:4, overflow:'hidden' }}>
+                  {suggestions.map((e, i) => (
+                    <div key={e.name}
+                      onMouseDown={() => { setAddExName(e.name); }}
+                      style={{ padding:'7px 10px', fontSize:12, color:theme.textPrimary, cursor:'pointer',
+                        borderBottom: i < suggestions.length - 1 ? `1px solid ${theme.borderMuted}` : 'none',
+                        background: 'transparent' }}
+                    >{e.name}</div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}

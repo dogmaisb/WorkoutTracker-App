@@ -1,5 +1,6 @@
 import { useBackground } from '../useBackground';
 import React, { useState, useEffect, useRef } from 'react';
+import { useTheme } from '../ThemeContext';
 import {
   loadSets, saveSets, deleteSet, getPR, getVolumePR, setMainValue,
   PR_METRIC, METRIC_LABELS, FIELD_DEFS,
@@ -25,6 +26,7 @@ const WEIGHT_UNITS = ['lb', 'kg'];
 
 // ── History Index ─────────────────────────────────────────────────────────────
 export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
+  const { theme } = useTheme();
   const bgStyle = useBackground("history");
   const [sets,   setSets]   = useState([]);
   const [search, setSearch] = useState('');
@@ -100,7 +102,7 @@ export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
   return (
     <div className="screen history-page" style={bgStyle}>
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
-      <div className="top-bar"><h1>History</h1></div>
+      <div className="top-bar"><h1 style={{ textShadow:theme.headingGlow }}>History</h1></div>
 
       {/* Fixed header — search + PRs */}
       <div style={{ flexShrink:0, padding:'14px 16px 8px' }}>
@@ -171,6 +173,7 @@ export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
 
 // ── All Exercises Screen ──────────────────────────────────────────────────────
 export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
+  const { theme } = useTheme();
   const bgStyle = useBackground("history");
   const [sets,   setSets]   = useState([]);
   const [search, setSearch] = useState('');
@@ -193,7 +196,7 @@ export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', alignItems:'center', gap:10 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'#6a9a6a', fontSize:20, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
-        <h1 style={{ margin:0 }}>All Exercises</h1>
+        <h1 style={{ margin:0, textShadow:theme.headingGlow }}>All Exercises</h1>
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:'0 16px 12px' }}>
         <div className="search-bar" style={{ margin:'10px 0 12px' }}>
