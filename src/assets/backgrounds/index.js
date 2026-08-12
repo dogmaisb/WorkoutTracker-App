@@ -12,6 +12,13 @@ import hunterSettings from './settings/Grizzlyback.png';
 import hunterTimers   from './timers/Grizzlyback.png';
 import hunterDiet     from './diet/Grizzlyback.png';
 
+import egyptWeek     from './week/EgyptianAnubis.png';
+import egyptProgress from './progress/EgyptianAnubis.png';
+import egyptHistory  from './history/EgyptianAnubis.png';
+import egyptSettings from './settings/EgyptianAnubis.png';
+import egyptTimers   from './timers/EgyptianAnubis.png';
+import egyptDiet     from './diet/EgyptianAnubis.png';
+
 const backgrounds = {
   week:     null,
   progress: null,
@@ -37,6 +44,14 @@ export const themeBackgrounds = {
     settings: hunterSettings,
     timers:   hunterTimers,
     diet:     hunterDiet,
+  },
+  EGYPTIAN: {
+    week:     egyptWeek,
+    progress: egyptProgress,
+    history:  egyptHistory,
+    settings: egyptSettings,
+    timers:   egyptTimers,
+    diet:     egyptDiet,
   },
 };
 
