@@ -26,6 +26,15 @@ const HUNTER_OVERLAYS = {
   settings: 'rgba(6,8,2,0.70)',
 };
 
+const CARBON_OVERLAYS = {
+  week:     'rgba(4,4,4,0.65)',
+  progress: 'rgba(4,4,4,0.65)',
+  history:  'rgba(4,4,4,0.63)',
+  diet:     'rgba(4,4,4,0.65)',
+  timers:   'rgba(4,4,4,0.68)',
+  settings: 'rgba(4,4,4,0.68)',
+};
+
 const CHRISTMAS_OVERLAYS = {
   week:     'rgba(8,0,2,0.68)',
   progress: 'rgba(8,0,2,0.68)',
@@ -53,24 +62,35 @@ const EGYPTIAN_OVERLAYS = {
   settings: 'rgba(16,10,2,0.68)',
 };
 
+// 'cover' fills the screen (most zoomed in). 'contain' fits the full image (no cropping).
+const THEME_BG_SIZE = {
+  CARBON: 'auto 100%',
+};
+
 export function useBackground(page) {
   const { themeName } = useTheme();
   const themeimgs = themeBackgrounds[themeName] || {};
   const img = themeimgs[page] || backgrounds[page];
-  if (!img) return {};
+  if (!img) return { bgStyle: {}, bgLayer: null };
+
   const overlayMap = themeName === 'AMERICAN' ? AMERICAN_OVERLAYS
-    : themeName === 'HUNTER' ? HUNTER_OVERLAYS
+    : themeName === 'HUNTER'    ? HUNTER_OVERLAYS
     : themeName === 'HALLOWEEN' ? HALLOWEEN_OVERLAYS
     : themeName === 'CHRISTMAS' ? CHRISTMAS_OVERLAYS
-    : themeName === 'EGYPTIAN' ? EGYPTIAN_OVERLAYS
+    : themeName === 'EGYPTIAN'  ? EGYPTIAN_OVERLAYS
+    : themeName === 'CARBON'    ? CARBON_OVERLAYS
     : OVERLAYS;
+
   const overlay = overlayMap[page] || 'rgba(0,0,0,0.70)';
-  const bgSize = 'cover';
-  return {
-    backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${img})`,
-    backgroundSize: bgSize,
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
+  const bgSize  = THEME_BG_SIZE[themeName] || 'cover';
+
+  const bgStyle = {
+    backgroundImage:      `linear-gradient(${overlay}, ${overlay}), url(${img})`,
+    backgroundSize:       bgSize,
+    backgroundPosition:   'center',
+    backgroundRepeat:     'no-repeat',
     backgroundAttachment: 'local',
   };
+
+  return { bgStyle, bgLayer: null };
 }

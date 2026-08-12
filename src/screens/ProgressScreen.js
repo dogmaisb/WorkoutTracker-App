@@ -567,9 +567,10 @@ export default function ProgressScreen({ stateVersion, weightUnit: globalWeightU
     ? METRIC_LABELS[activeMet].match(/\(([^)]+)\)/)?.[1] || ''
     : '');
 
-  const bgStyle = useBackground("progress");
+  const { bgStyle, bgLayer } = useBackground("progress");
   return (
     <div className="screen progress-page" style={bgStyle}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar"><h1 style={{ textShadow:theme.headingGlow }}>Progress</h1></div>
       <div className="scroll">

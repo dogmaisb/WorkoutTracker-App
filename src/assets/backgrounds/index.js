@@ -12,6 +12,13 @@ import hunterSettings from './settings/Grizzlyback.png';
 import hunterTimers   from './timers/Grizzlyback.png';
 import hunterDiet     from './diet/Grizzlyback.png';
 
+import carbonWeek     from './week/Carbon.png';
+import carbonProgress from './progress/Carbon.png';
+import carbonHistory  from './history/Carbon.png';
+import carbonSettings from './settings/Carbon.png';
+import carbonTimers   from './timers/Carbon.png';
+import carbonDiet     from './diet/Carbon.png';
+
 import xmasWeek     from './week/XmasClaus.png';
 import xmasProgress from './progress/XmasClaus.png';
 import xmasHistory  from './history/XmasClaus.png';
@@ -58,6 +65,14 @@ export const themeBackgrounds = {
     settings: hunterSettings,
     timers:   hunterTimers,
     diet:     hunterDiet,
+  },
+  CARBON: {
+    week:     carbonWeek,
+    progress: carbonProgress,
+    history:  carbonHistory,
+    settings: carbonSettings,
+    timers:   carbonTimers,
+    diet:     carbonDiet,
   },
   CHRISTMAS: {
     week:     xmasWeek,

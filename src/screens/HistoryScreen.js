@@ -27,7 +27,7 @@ const WEIGHT_UNITS = ['lb', 'kg'];
 // ── History Index ─────────────────────────────────────────────────────────────
 export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
   const { theme } = useTheme();
-  const bgStyle = useBackground("history");
+  const { bgStyle, bgLayer } = useBackground("history");
   const [sets,   setSets]   = useState([]);
   const [search, setSearch] = useState('');
   const prRef   = useRef(null);
@@ -101,6 +101,7 @@ export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
 
   return (
     <div className="screen history-page" style={bgStyle}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar"><h1 style={{ textShadow:theme.headingGlow }}>History</h1></div>
 
@@ -174,7 +175,7 @@ export function HistoryScreen({ onOpenDetail, onOpenAllEx, stateVersion }) {
 // ── All Exercises Screen ──────────────────────────────────────────────────────
 export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
   const { theme } = useTheme();
-  const bgStyle = useBackground("history");
+  const { bgStyle, bgLayer } = useBackground("history");
   const [sets,   setSets]   = useState([]);
   const [search, setSearch] = useState('');
 
@@ -193,6 +194,7 @@ export function AllExercisesScreen({ onBack, onOpenDetail, stateVersion }) {
 
   return (
     <div className="screen history-page" style={bgStyle}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', alignItems:'center', gap:10 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'#6a9a6a', fontSize:20, cursor:'pointer', padding:0, lineHeight:1 }}>←</button>
@@ -415,7 +417,7 @@ function EditModal({ set, onSave, onDelete, onClose }) {
 
 // ── Detail Screen ─────────────────────────────────────────────────────────────
 export function DetailScreen({ exerciseName, onBack }) {
-  const bgStyle = useBackground("history");
+  const { bgStyle, bgLayer } = useBackground("history");
   const [sets,    setSets]    = useState([]);
   const [editing, setEditing] = useState(null); // set object being edited
 

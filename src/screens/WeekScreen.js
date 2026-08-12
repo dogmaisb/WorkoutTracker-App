@@ -251,7 +251,7 @@ export default function WeekScreen({
   stateVersion,
 }) {
   const { theme, themeName } = useTheme();
-  const bgStyle = useBackground("week");
+  const { bgStyle, bgLayer } = useBackground("week");
 
   const [sets,         setSets]         = useState(loadSets());
   const [customExercises, setCustomExercises] = useState(() => loadExercises());
@@ -523,6 +523,7 @@ export default function WeekScreen({
     const presEx = prescribed && prescribed.exercises[logExercise.pIdx];
     return (
       <div className="screen week-page" style={bgStyle}>
+        {bgLayer}
         <div className="status-bar"><span>9:41</span><span>●●●</span></div>
         <div className="scroll" style={{ paddingTop:12 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -737,6 +738,7 @@ export default function WeekScreen({
   // - Checklist View -
   return (
     <div className="screen week-page" style={{ background:'#424242', ...bgStyle }}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
         <div>

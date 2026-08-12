@@ -296,7 +296,7 @@ function TDEEPanel({ tdeeData, setTdeeData, tdee, goalCal, onSave }) {
 // ── Meal Detail Page ──────────────────────────────────────────────────────────
 function MealPage({ meal, items, onBack, onSubmit }) {
   const { theme } = useTheme();
-  const bgStyle = useBackground('diet');
+  const { bgStyle, bgLayer } = useBackground('diet');
   const blankRow = () => ({ id: Date.now() + Math.random(), name:'', cal:'', carbs:'', fats:'', protein:'', chol:'', sodium:'' });
 
   const [rows, setRows] = useState(
@@ -425,6 +425,7 @@ function MealPage({ meal, items, onBack, onSubmit }) {
 
   return (
     <div className="screen diet-page" style={bgStyle}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -898,7 +899,7 @@ function TrendGraph({ history, goalCal, showBodyweight }) {
 // ── Main Diet Screen ──────────────────────────────────────────────────────────
 export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit: setGlobalWeightUnit }) {
   const { theme } = useTheme();
-  const bgStyle = useBackground("diet");
+  const { bgStyle, bgLayer } = useBackground("diet");
   const stored = loadDiet();
 
   const [tdeeData,  setTdeeData]  = useState(stored.tdeeData || {
@@ -981,6 +982,7 @@ export default function DietScreen({ weightUnit: globalWeightUnit, setWeightUnit
 
   return (
     <div className="screen diet-page" style={bgStyle}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
         <div>

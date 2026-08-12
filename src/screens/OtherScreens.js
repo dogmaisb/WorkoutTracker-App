@@ -30,7 +30,7 @@ function exportData() {
 
 export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = 'lb', setWeightUnit, distUnit = 'mi', setDistUnit, sprintUnit = 'yd', setSprintUnit, powerUnit = 'ft', setPowerUnit, pageSwipe = true, setPageSwipe }) {
   const { theme, themeName, changeTheme } = useTheme();
-  const bgStyle = useBackground('settings');
+  const { bgStyle, bgLayer } = useBackground('settings');
   const [themeOpen, setThemeOpen] = useState(false);
   const [importFlash,  setImportFlash]  = useState(null);
   const [backupFlash,  setBackupFlash]  = useState(null);
@@ -172,6 +172,7 @@ export function SettingsScreen({ onImport, onOpenExerciseLibrary, weightUnit = '
 
   return (
     <div className="screen week-page" style={bgStyle}>
+      {bgLayer}
       <div className="status-bar"><span>9:41</span><span>●●●</span></div>
       <div className="top-bar" style={{ position:'relative' }}>
         <h1 style={{ margin:0, textShadow:theme.headingGlow }}>Settings</h1>
