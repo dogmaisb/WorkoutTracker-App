@@ -244,6 +244,8 @@ export default function WeekScreen({
   fieldVals, setFieldVals,
   sprintMode, setSprintMode,
   curExIdx, setCurExIdx,
+  logExercise, setLogExercise,
+  selectedPIdx, setSelectedPIdx,
   distUnit, setDistUnit,
   sprintUnit, setSprintUnit,
   powerUnit, setPowerUnit,
@@ -258,8 +260,6 @@ export default function WeekScreen({
   const [flash,        setFlash]        = useState(false);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'MMM d yyyy'));
   const [checkedItems, setCheckedItems] = useState(new Set());
-  const [logExercise,  setLogExercise]  = useState(null); // { exIdx, pIdx }
-  const [selectedPIdx, setSelectedPIdx] = useState(null);
   const [blankWarning, setBlankWarning] = useState(null);
   const [editingSetId, setEditingSetId] = useState(null);
   const [eachSide,     setEachSide]     = useState(false);
@@ -431,7 +431,7 @@ export default function WeekScreen({
     const m = s.match(/^(\d+)\s*each$/) || s.match(/^(\d+)e$/);
     if (m) return m[1] + 'e';
     if (exName && /^s[la]\b/i.test(String(exName).trim()) && /^\d+$/.test(s)) return s + 'e';
-    if (exType === 'stretch-static' && /^\d+$/.test(s)) return s + 's';
+    if (exType === 'stretch-static' && /^\d+$/.test(s)) return parseInt(s) <= 5 ? s + 'min' : s + 's';
     return r;
   }
 

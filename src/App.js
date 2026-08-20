@@ -82,10 +82,12 @@ export default function App() {
   const [showExLib, setShowExLib] = useState(false);
 
   // Lifted up so they survive the Notes screen mount/unmount
-  const [noteText,  setNoteText]  = useState('');
-  const [fieldVals, setFieldVals] = useState({});
-  const [sprintMode,setSprintMode]= useState(false);
-  const [curExIdx,  setCurExIdx]  = useState(0);
+  const [noteText,     setNoteText]     = useState('');
+  const [fieldVals,    setFieldVals]    = useState({});
+  const [sprintMode,   setSprintMode]   = useState(false);
+  const [curExIdx,     setCurExIdx]     = useState(0);
+  const [logExercise,  setLogExercise]  = useState(null);
+  const [selectedPIdx, setSelectedPIdx] = useState(null);
   const [distUnit,   setDistUnit]   = useState(() => loadSettings().distUnit   || 'mi');
   const [sprintUnit, setSprintUnit] = useState(() => loadSettings().sprintUnit || 'yd');
   const [powerUnit,  setPowerUnit]  = useState(() => loadSettings().powerUnit  || 'ft');
@@ -226,6 +228,10 @@ export default function App() {
         setSprintMode={setSprintMode}
         curExIdx={curExIdx}
         setCurExIdx={setCurExIdx}
+        logExercise={logExercise}
+        setLogExercise={setLogExercise}
+        selectedPIdx={selectedPIdx}
+        setSelectedPIdx={setSelectedPIdx}
         distUnit={distUnit}
         setDistUnit={changeDistUnit}
         sprintUnit={sprintUnit}
