@@ -617,11 +617,14 @@ export default function WeekScreen({
                     style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background: isEditing ? theme.bgSurface : theme.borderRaised, border: `1px solid ${isEditing ? theme.accentGreen : theme.borderDefault}`, borderRadius:9, padding:'9px 12px', marginBottom:7, transition:'all .15s' }}>
                     <div style={{ fontSize:12, color: isEditing ? theme.accentGreen : theme.textSecondary }}>Set {i + 1}</div>
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                      <div style={{ fontSize:13, fontWeight:600, color:theme.textPrimary }}>
-                        {setMainValue(s)}
-                        {s.vals.reps && (s.vals.weight || s.vals.added) && (s.type === 'strength' || s.type === 'bodyweight') && (
-                          <span style={{ color:theme.textSecondary, fontWeight:400, marginLeft:5 }}>× {s.vals.reps} reps</span>
-                        )}
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:600, color:theme.textPrimary }}>
+                          {setMainValue(s)}
+                          {s.vals.reps && (s.vals.weight || s.vals.added) && (s.type === 'strength' || s.type === 'bodyweight') && (
+                            <span style={{ color:theme.textSecondary, fontWeight:400, marginLeft:5 }}>× {s.vals.reps} reps</span>
+                          )}
+                        </div>
+                        {s.note ? <div style={{ fontSize:11, color:theme.accentGreen, marginTop:2, fontStyle:'italic' }}>📝 {s.note}</div> : null}
                       </div>
                       <span
                         onClick={() => {
