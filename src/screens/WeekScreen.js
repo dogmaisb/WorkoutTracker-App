@@ -480,6 +480,31 @@ export default function WeekScreen({
       if (logExercise !== null) {
         setCheckedItems(prev => { const next = new Set(prev); next.add(logExercise.pIdx); return next; });
       }
+      // Auto-advance for circuit/superset exercises
+      if (prescribed && selectedPIdx !== null) {
+        const curPEx = prescribed.exercises[selectedPIdx];
+        if (curPEx && curPEx.inCircuit) {
+          const exs = prescribed.exercises;
+          let nextPIdx = null;
+          if (curPEx.isLastInCircuit) {
+            // Wrap back to first exercise in this circuit block
+            for (let k = selectedPIdx - 1; k >= 0; k--) {
+              if (exs[k].inCircuit) { nextPIdx = k; }
+              else break;
+            }
+            if (nextPIdx === null) nextPIdx = selectedPIdx; // fallback: stay
+          } else {
+            // Advance to next circuit exercise
+            nextPIdx = selectedPIdx + 1;
+          }
+          if (nextPIdx !== null && nextPIdx !== selectedPIdx) {
+            const nextEx = exs[nextPIdx];
+            const allEx  = [...EXERCISES, ...customExercises];
+            const nextExIdx = allEx.findIndex(e => e.name.toLowerCase() === nextEx.name.toLowerCase());
+            pickEx(nextExIdx >= 0 ? nextExIdx : curExIdx, nextPIdx);
+          }
+        }
+      }
     }
     setFieldVals({});
     setNoteText('');
